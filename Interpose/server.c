@@ -46,15 +46,6 @@ char *execute_getdirtree(char* msg);
 char *add_len(char *str, int count);
 char *add_neg_len(char *str, int count);
 
-pthread_t tid[MAXTHREADNUM];
-int thread_idx = 0;
-
-struct pthread_arg_t {
-    int sessfd;
-};
-
-void *accept_new_client(void *arg);
-
 /*
  * Server-side unmarshalling message
  * @param: 
@@ -137,10 +128,12 @@ char *execute_open(char* msg) {
     pathname = &msg[idx];
 
     int openfd = open(pathname, flags, m);
-    char *ret_val = int_to_str(openfd);
+    char *ret_val;
     if (openfd < 0) {
         ret_val = int_to_str(-errno);
-        fprintf(stderr, "open errno: %d\n", errno);
+    }
+    else {
+        ret_val = int_to_str(openfd);
     }
     return add_len(ret_val, 30); // return value: fd or -errno
 }
@@ -156,10 +149,12 @@ char *execute_close(char* msg) {
     fd -= FD_OFFSET;
 
     int closefd = close(fd);
-    char *ret_val = int_to_str(closefd);
+    char *ret_val;
     if (closefd < 0) {
-        fprintf(stderr, "close errno: %d\n", errno);
         ret_val = int_to_str(-errno);
+    }
+    else {
+        ret_val = int_to_str(closefd);
     }
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
@@ -187,26 +182,26 @@ char *execute_read(char* msg) {
     buf = (char *)malloc((count + 10) * sizeof(char));
 
     ssize_t byteread = read(fd, buf, count);
-    fprintf(stderr, "server byte read: %d\n", (int)byteread);
     char *ret_val;
     if (byteread < 0) {
         ret_val = int_to_str(-errno);
         fprintf(stderr, "read errno: %d\n", errno);
-        fprintf(stderr, "server return read: %s\n", add_neg_len(ret_val, 30));
         return add_neg_len(ret_val, 30);
     }
 	
     ret_val = (char *)malloc((byteread + 20) * sizeof(char));
-    strcpy(ret_val, ssize_t_to_str(byteread));
+    char *len_str = ssize_t_to_str(byteread);
+    strcpy(ret_val, len_str);
+    free(len_str);
     ((char *)buf)[byteread] = '\0';
     strcat(ret_val, "|");
     idx = 0;
     while (ret_val[idx] != '|')	idx++;
     idx++;
     memcpy(ret_val + idx, (char *)buf, byteread);
-
+    
     free((char*)buf);
-
+    
     return ret_val; // return value: bytes_read|content
 }
 
@@ -220,7 +215,6 @@ char *execute_write(char* msg) {
     int fd = 0;
     char *buf;
     size_t count = 0; // parameters
-    fprintf(stderr, "###in\n");
     int idx = 6;
     fd = ato_int(&msg[idx]);
     fd -= FD_OFFSET;
@@ -232,20 +226,19 @@ char *execute_write(char* msg) {
     while (msg[idx] != '|')	idx++;
     idx++;
 
-    fprintf(stderr, "server write fd: %d\n", fd);
-    fprintf(stderr, "server write count: %d\n", (int)count);
     // Start copying content to buf
     // There may be \0 in the content, so use memcpy instead of strcpy
     buf = (char *)malloc((count + 1) * sizeof(char));
     memcpy(buf, msg + idx, count);
-    fprintf(stderr, "server write content: %s\n", buf);
 
     ssize_t write_bytes = write(fd, buf, count);
     fprintf(stderr, "server write bytes: %d\n", (int)write_bytes);
-    char *ret_val = ssize_t_to_str(write_bytes);
+    char *ret_val;
     if (write_bytes < 0) {
         ret_val = int_to_str(-errno);
-        fprintf(stderr, "write errno: %d\n", errno);
+    }
+    else {
+        ret_val = ssize_t_to_str(write_bytes);
     }
 
     free(buf);
@@ -277,10 +270,12 @@ char *execute_lseek(char* msg) {
     whence = ato_int(&msg[idx]);
 
     off_t ret_offset = lseek(fd, offset, whence);
-    char *ret_val = off_t_to_str(ret_offset);
+    char *ret_val;
     if (ret_offset < 0) {
         ret_val = int_to_str(-errno);
-        fprintf(stderr, "lseek server errno: %d\n", (int)errno);
+    }
+    else {
+        ret_val = off_t_to_str(ret_offset);
     }
     return add_len(ret_val, 30); // return value: offset or -errno
 }
@@ -313,12 +308,16 @@ char *execute_stat(char* msg) {
     buf = ato_stat(&msg[idx]);
 
     int stat_ret = __xstat(ver, path, buf);
-    char *ret_val = int_to_str(stat_ret);
+    char *ret_val;
     if (stat_ret < 0) {
         ret_val = int_to_str(-errno);
-        fprintf(stderr, "stat server errno: %d\n", (int)errno);
     }
+    else {
+        ret_val = int_to_str(stat_ret);
+    }
+    
     free(path);
+    
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
 
@@ -332,10 +331,12 @@ char *execute_unlink(char* msg) {
     char *pathname = &msg[7];
 
     int unlink_ret = unlink(pathname);
-    char *ret_val = int_to_str(unlink_ret);
+    char *ret_val;
     if (unlink_ret < 0) {
         ret_val = int_to_str(-errno);
-        fprintf(stderr, "unlink server errno: %d\n", (int)errno);
+    }
+    else {
+        ret_val = int_to_str(unlink_ret);
     }
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
@@ -369,28 +370,30 @@ char *execute_getdirentries(char* msg) {
     buf = (char *)malloc((nbytes + 1) * sizeof(char));
 
     ssize_t ret_val = getdirentries(fd, buf, nbytes, basep);
-    fprintf(stderr, "ret_val in getdiren: %d\n", (int)ret_val);
+
     if (ret_val < 0) {
         char *ret_str = int_to_str(-errno);
         fprintf(stderr, "getdirentries: server errno: %d\n", (int)errno);
         return add_len(ret_str, 30);
     }
 
-    char *ret = (char *)malloc((nbytes + 20) * sizeof(char));
-    strcpy(ret, ssize_t_to_str(ret_val)); // get bytes transferred
+    char *ret = (char *)malloc((nbytes + 30) * sizeof(char));
+    char *len_str = ssize_t_to_str(ret_val);
+    strcpy(ret, len_str); // get bytes transferred
+    free(len_str);
     strcat(ret, "|");
+    
     char *traverse = ret;
     while (*traverse != '|')	traverse++;
     traverse++;
-
+    
     int i = 0;
     for (i = 0; i < ret_val; i++) {
         traverse[i] = buf[i];
-        if (traverse[i] == '\0')	traverse[i] = '|';
     }
     traverse[i] = '\0';
     free(buf);
-    return ret; // return value: -errno OR bytes_transferred|contents
+    return ret; // return value: -errno OR bytes_transferrer|contents
 }
 
 /*
@@ -409,9 +412,64 @@ char *execute_getdirtree(char* msg) {
     char *ret_val = dirtreenode_to_str(ret_dirtreenode);
     int len = strlen(ret_val);
     char *ret = int_to_str(len);
-    strcat(ret, "|");
+    char *new_space = (char *)malloc(1000 * sizeof(char));
+    strcpy(new_space, ret);
+    strcat(new_space, "|");
+    free(ret);
     freedirtree(ret_dirtreenode);
-    return strcat(ret, ret_val); // return value: -errno OR len_of_return|contents
+    char *final_val = strcat(new_space, ret_val);
+    free(ret_val);
+    return final_val;// return value: -errno OR len_of_return|contents
+}
+
+/*
+ * Wrapper of sending message.
+ * I insert 4 byte of int to denote how many bytes behind to transfer
+ * Keep sending until all bytes are sent
+ * @return: number of bytes sent, or -1 if error occurred
+ */
+int send_message(int len, char *msg, int sockfd) {
+    // send message to server
+    char *msgLen = (char *)malloc((4 + len) * sizeof(char));//int_to_str(len);
+    memcpy(msgLen, &len, 4);
+    memcpy(msgLen + 4, msg, len);
+    int byte_send = 0;
+    len += 4;
+    
+    while (byte_send < len) {
+        int sd = send(sockfd, msgLen + byte_send, len - byte_send, 0);
+        byte_send += sd;
+    }
+    free(msgLen);
+    return byte_send;
+}
+
+/*
+ * Wrapper of receiving message.
+ * Receive the first 4 byte of int to denote how many bytes behind to be received
+ * Keep receiving until all bytes have been received
+ * @return: number of bytes received, or -1 if error occurred
+ */
+int  receive_message(int sockfd, char *connection_buf, int mallocLen) {
+    int recv_byte = 0;
+    memset(connection_buf, 0, mallocLen);
+    
+    int len;
+    int first_time = 1;
+    
+    while (1) {
+        int rv = recv(sockfd, connection_buf + recv_byte, mallocLen, 0);
+        if (rv < 0) err(1, 0);
+        if (rv == 0)	return 0;
+        recv_byte += rv;
+        if (first_time == 1) {
+            first_time = 0;
+            memcpy(&len, connection_buf, 4);
+        }
+        if (len + 4 <= recv_byte)	 break;
+    }
+    connection_buf[recv_byte] = 0;
+    return recv_byte;
 }
 
 int main(int argc, char **argv) {
@@ -444,92 +502,64 @@ int main(int argc, char **argv) {
     rv = listen(sockfd, 127);
     if (rv < 0)	err(1, 0);
 
-    // main server loop, handle clients one at a time, quit after
-    // 10 clients
+    if (signal(SIGCHLD, SIG_IGN) == SIG_ERR) {
+        perror(0);
+        exit(1);
+    }
+    
     while (1) {
         // wait for next client, get session socket
         sa_size = sizeof(struct sockaddr_in);
-        // spawn a thread to deal with concurrent clients
         int sessfd = accept(sockfd, (struct sockaddr *)&cli, &sa_size);
         if (sessfd < 0)	err(1, 0);
-
-        struct pthread_arg_t arg;
-        arg.sessfd = sessfd;
-        pthread_create(&(tid[thread_idx]), NULL, accept_new_client, &arg);
+        
         // get messages and send replies to this client,
         // until it goes a way
-        /*char buf[MAXMSGLEN + 1];
-         memset(buf, 0, sizeof(buf));
-		rv = recv(sessfd, buf, MAXMSGLEN, 0);
-		if (rv < 0)	err(1, 0);
-		buf[rv] = 0; // null terminate string to print
-
-		// Unmarshalling the message, and execute it
-		char *ret_val = unmarshalling_method(buf); //TODO: return number of characters, num|string
-		int len = 0, lenlen = 0;
-		char *start = ret_val;
-		while (*start != '|') {
-			len = len * 10 + *start - '0';
-			start++;
-			lenlen++;
-		}
-		start++;
-
-		// Send it back to client
-		//printf("server reply return value of: %s\n", ret_val);
-		//ret_val[strlen(ret_val)] = '\0';
-		
-		send(sessfd, ret_val, len + lenlen + 1, 0);
-
-		if (rv < 0)	err(1, 0);*/
-		//close(sessfd);
-
-    }
-
-    close(sockfd);
-
-    return 0;
-}
-
-/*
- * Craete a new pthread to accept new socket connection from mylib
- */
-void *accept_new_client(void *arg) {
-    /* 
-     * Get messages and send replies to this client,
-     * until it goes a way
-     */
-    struct pthread_arg_t *thread_arg = (struct pthread_arg_t *)arg;
-    int sessfd = thread_arg->sessfd;
-    char *buf = (char *)malloc(MAXWRITELEN * sizeof(char));
-    while (1) {
-        memset(buf, 0, MAXWRITELEN);
-        int rv = recv(sessfd, buf, MAXMSGLEN, 0);
-
-        if (rv < 0)	err(1, 0);
-        if (rv == 0)	continue;
-        buf[rv] = 0; // null terminate string to print
-
-        // Unmarshalling the message, and execute it
-        char *ret_val = unmarshalling_method(buf); // return number of characters, num|string
-        int len = 0, lenlen = 0;
-        char *start = ret_val;
-        while (*start != '|') {
-            len = len * 10 + *start - '0';
-            start++;
-            lenlen++;
+        pid_t pid = fork();
+        if (pid == 0) { // child process
+            close(sockfd);
+            while (1) {
+                
+                char *buf = (char *)malloc(MAXWRITELEN * sizeof(char));
+                int crv = receive_message(sessfd, buf, MAXWRITELEN);
+                if (crv == 0) {
+                    free(buf);
+                    close(sessfd);
+                    return 0;
+                }
+                if (crv < 0) {
+                    err(1, 0);
+                }
+                
+                // Unmarshalling the message, and execute it
+                char *ret_val = unmarshalling_method(buf + 4);
+                int len = 0, lenlen = 0;
+                char *start = ret_val;
+                if (*start == '-') {
+                    start++; // deal with read
+                    lenlen++;
+                }
+                while (*start != '|') {
+                    len = len * 10 + *start - '0';
+                    start++;
+                    lenlen++;
+                }
+                start++;
+                
+                send_message(len + lenlen + 1, ret_val, sessfd);
+                
+                free(buf);
+                free(ret_val);
+            }
+        }else {
+            close(sessfd);
         }
-        start++;
-
-        // Send it back to client
-        send(sessfd, ret_val, len + lenlen + 1, 0);
-
-        if (rv < 0)	err(1, 0);
-        free(ret_val);
+        
     }
-    free(buf);
-
-    return NULL;
+    
+    close(sockfd);
+    
+    return 0;
 }
 
 /*
@@ -539,14 +569,18 @@ void *accept_new_client(void *arg) {
  *    str: char array to append length info
  *    count: number of characters to allocate the new char array
  * @return:
- *    Ptr to the new char array
+ *    Ptr to the new char array, len|return content OR errno
  */
 char *add_len(char *str, int count) {
     int len = strlen(str);
     char *ret = (char *)malloc(count * sizeof(char));
-    strcpy(ret, int_to_str(len));
+    char *len_str = int_to_str(len);
+    strcpy(ret, len_str);
+    free(len_str);
     strcat(ret, "|");
-    return strcat(ret, str);
+    char *ret_val = strcat(ret, str);
+    free(str);
+    return ret_val;
 }
 
 /*
@@ -557,12 +591,14 @@ char *add_len(char *str, int count) {
  *    str: char array to append length info
  *    count: number of characters to allocate the new char array
  * @return:
- *    Ptr to the new char array
+ *    Ptr to the new char array, -len|errno
  */
 char *add_neg_len(char *str, int count) {
     int len = strlen(str);
     char *ret = (char *)malloc(count * sizeof(char));
-    strcpy(ret, int_to_str(-len));
+    char *len_str = int_to_str(-len);
+    strcpy(ret, len_str);
+    free(len_str);
     strcat(ret, "|");
     return strcat(ret, str);
 }
