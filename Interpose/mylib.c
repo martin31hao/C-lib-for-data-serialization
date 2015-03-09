@@ -3,8 +3,10 @@
  * @contact: xinkaiw@andrew.cmu.edu
  *
  * mylib.c
- * The main functionality of marshalling and unmarshalling
- * data on different system calls.
+ * The main functionality is to do marshalling and unmarshalling data on different system calls.
+ * The mylib works as a share library to be preloaded before executing the client application
+ * so that system calls can be overwritten with mylib to achieve serialization and deserialiazation
+ *
  * Supported system calls:
  * open, close, read, write, lseek, xstat, unlink, getdirentries
  * As well as two self-define functions:
@@ -147,6 +149,15 @@ char *connect_to_server(char* msg, int len) {
 //int (*orig_open)(const char *pathname, int flags, ...);  // mode_t mode is needed when flags includes O_CREAT
 
 // This is our replacement for the open function from libc.
+/*
+ * open system call with data serialization and deserialization
+ * @param:
+ *    pathname: path name of a file
+ *    flags: 
+ *    mode:
+ * @return:
+ *    file descriptor if acquired successfully from server, -1 if failed
+ */
 int open(const char *pathname, int flags, ...) {
 	mode_t m=0;
 	if (flags & O_CREAT) {
@@ -157,8 +168,11 @@ int open(const char *pathname, int flags, ...) {
 	}
 	// we just print a message, then call through to the original open function (from libc)
 	fprintf(stderr, "mylib: open called for path %s\n", pathname);
+    
+    /* allocate 300 bytes for serialization */
 	char *argv = (char*)malloc(300 * sizeof(char));
 
+    /* parameters are separated from a '|' character */
 	strcpy(argv, int_to_str(flags));
 	strcat(argv, "|");
 	strcat(argv, mode_t_to_str(m));
@@ -168,24 +182,42 @@ int open(const char *pathname, int flags, ...) {
 	char* msg = marshalling_method("open", argv, strlen(argv));
 	char *ret_val = connect_to_server(msg, strlen(msg));
 	ret_val = get_ret_content(ret_val);
+    
+    /* if return value starts with a '-', which means an errno is returned */
 	if (*ret_val == '-') {
+        /* set the returned errno and return -1 */
 		errno = -atoi(ret_val);
 		fprintf(stderr, "errno: %d\n", errno);
 		return -1;
 	}
 	fprintf(stderr, "open fd: %d\n", atoi(ret_val));
+    
+    /*
+     * if success, return the file descriptor starting from the FD_OFFSET
+     * The FD_OFFSET is to discriminate the library fd to fd acquired from the system itself
+     */
 	return atoi(ret_val) + FD_OFFSET;
 }
 
-
-int (*orig_close)(int fd);
-
+/*
+ * close system call with data serialization and deserialization
+ * @param:
+ *    fd: file descriptor
+ * @return:
+ *    0 if succeed, -1 if not
+ */
 int close(int fd) {
 	fprintf(stderr, "mylib: close called for fd: %d\n", fd);
+    /*
+     * if the fd is smaller than the fd provided by our mylib,
+     * then the original close should be called instead
+     */
 	if (fd < FD_OFFSET) {
 		return orig_close(fd);
 	}
 	char *argv;
+    
+    /* allocate 12 bytes for serialization */
 	argv = (char*)malloc(12 * sizeof(char));
 
 	strcpy(argv, int_to_str(fd));
@@ -193,6 +225,7 @@ int close(int fd) {
 	char* msg = marshalling_method("close", argv, strlen(argv));
 	char *ret_val = connect_to_server(msg, strlen(msg));
 	ret_val = get_ret_content(ret_val);
+    
 	if (*ret_val == '-') {
 		errno = -atoi(ret_val);
 		fprintf(stderr, "errno: %d\n", errno);
