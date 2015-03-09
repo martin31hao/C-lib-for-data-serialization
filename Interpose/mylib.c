@@ -97,14 +97,14 @@ char *connect_to_server(char* msg, int len) {
 	if (firstConnect == 1) {
         firstConnect = 0;
 		
-		// Get environment variable indicating the ip address of the server
+        // Get environment variable indicating the ip address of the server
         serverip = getenv("server15440");
         if (serverip); printf("Got environment variable server15440: %s\n", serverip);
         else {
             serverip = "127.0.0.1";
         }
 
-		// Get environment variable indicating the port of the server
+        // Get environment variable indicating the port of the server
         serverport = getenv("serverport15440");
         if (serverport) fprintf(stderr, "Got environment variable serverport15440: %s\n", serverport);
         else {
@@ -117,8 +117,8 @@ char *connect_to_server(char* msg, int len) {
         sockfd = socket(AF_INET, SOCK_STREAM, 0);       // TCP/IP socket
         if (sockfd < 0) {
 			err(1, 0);                        // in case of error
-			firstConnect = 1;
-		}
+            firstConnect = 1;
+        }
 
         // setup address structure to point to server
         memset(&srv, 0, sizeof(srv));                   // clear it first
@@ -131,7 +131,7 @@ char *connect_to_server(char* msg, int len) {
             err(1, 0);
 			firstConnect = 1;
 		}
-	}
+    }
 
 	// send message to server
 	send(sockfd, msg, len + 1, 0);
@@ -159,44 +159,44 @@ char *connect_to_server(char* msg, int len) {
  *    file descriptor if acquired successfully from server, -1 if failed
  */
 int open(const char *pathname, int flags, ...) {
-	mode_t m=0;
-	if (flags & O_CREAT) {
-		va_list a;
-		va_start(a, flags);
-		m = va_arg(a, mode_t);
-		va_end(a);
-	}
-	// we just print a message, then call through to the original open function (from libc)
-	fprintf(stderr, "mylib: open called for path %s\n", pathname);
+    mode_t m=0;
+    if (flags & O_CREAT) {
+        va_list a;
+        va_start(a, flags);
+        m = va_arg(a, mode_t);
+        va_end(a);
+    }
+    // we just print a message, then call through to the original open function (from libc)
+    fprintf(stderr, "mylib: open called for path %s\n", pathname);
     
     /* allocate 300 bytes for serialization */
-	char *argv = (char*)malloc(300 * sizeof(char));
+    char *argv = (char*)malloc(300 * sizeof(char));
 
     /* parameters are separated from a '|' character */
-	strcpy(argv, int_to_str(flags));
-	strcat(argv, "|");
-	strcat(argv, mode_t_to_str(m));
-	strcat(argv, "|");
-	strcat(argv, pathname);
+    strcpy(argv, int_to_str(flags));
+    strcat(argv, "|");
+    strcat(argv, mode_t_to_str(m));
+    strcat(argv, "|");
+    strcat(argv, pathname);
 	
-	char* msg = marshalling_method("open", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
+    char* msg = marshalling_method("open", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
     
     /* if return value starts with a '-', which means an errno is returned */
-	if (*ret_val == '-') {
+    if (*ret_val == '-') {
         /* set the returned errno and return -1 */
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
-	fprintf(stderr, "open fd: %d\n", atoi(ret_val));
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
+    fprintf(stderr, "open fd: %d\n", atoi(ret_val));
     
     /*
      * if success, return the file descriptor starting from the FD_OFFSET
      * The FD_OFFSET is to discriminate the library fd to fd acquired from the system itself
      */
-	return atoi(ret_val) + FD_OFFSET;
+    return atoi(ret_val) + FD_OFFSET;
 }
 
 /*
@@ -393,8 +393,15 @@ off_t lseek(int fd, off_t offset, int whence) {
 	return ato_off_t(ret_val);
 }
 
-int (*orig_stat)(int ver, const char *path, struct stat *buf);
-
+/*
+ * __xstat system call with data serialization and deserialization
+ * @param:
+ *    ver: version number
+ *    path: file path to get file stat info
+ *    stat_buf: stat_buf to store the file info
+ * @return:
+ *    0 if succeed, -1 if error
+ */
 int __xstat(int ver, const char *path, struct stat *stat_buf) {
 	fprintf(stderr, "mylib: stat called for path: %s\n", path);
 
@@ -408,6 +415,7 @@ int __xstat(int ver, const char *path, struct stat *stat_buf) {
 	char* msg = marshalling_method("__xstat", argv, strlen(argv));
 	char *ret_val = connect_to_server(msg, strlen(msg));
 	ret_val = get_ret_content(ret_val);
+    
 	if (*ret_val == '-') {
 		errno = -atoi(ret_val);
 		fprintf(stderr, "errno: %d\n", errno);
@@ -417,8 +425,13 @@ int __xstat(int ver, const char *path, struct stat *stat_buf) {
 	return atoi(ret_val);
 }
 
-int (*orig_unlink)(const char *pathname);
-
+/*
+ * unlink system call with data serialization and deserialization
+ * @param:
+ *    pathname: file path to unlink
+ * @return:
+ *    0 if succeed, -1 if error
+ */
 int unlink(const char *pathname) {
 	fprintf(stderr, "mylib: unlink called for path: %s\n", pathname);
 	char *argv = (char *)malloc(1000 * sizeof(char));
@@ -428,6 +441,7 @@ int unlink(const char *pathname) {
 	char* msg = marshalling_method("unlink", argv, strlen(argv));
 	char *ret_val = connect_to_server(msg, strlen(msg));
 	ret_val = get_ret_content(ret_val);
+    
 	if (*ret_val == '-') {
 		errno = -atoi(ret_val);
 		fprintf(stderr, "errno: %d\n", errno);
