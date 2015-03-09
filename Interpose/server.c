@@ -57,11 +57,16 @@ void *accept_new_client(void *arg);
 
 /*
  * Server-side unmarshalling message
+ * @param: 
+ *    marshallMsg: marshalling message from mylib
+ * @return: 
+ *    Marshalling message of return value after running syscalls on server
  */
 char *unmarshalling_method(char* marshallMsg) {
     // Allocate memory for function name
     char *func_name = (char *)malloc(MAXFUNCSIZE * sizeof(char));
 
+    /* Get the function name */
     int func_start = 0;
     int idx = 0;
     while (marshallMsg[func_start] != '|') {
@@ -73,48 +78,47 @@ char *unmarshalling_method(char* marshallMsg) {
     if (strcmp(func_name, "open") == 0) {
         free(func_name);
         return execute_open(marshallMsg);
-    }
-    else if (strcmp(func_name, "close") == 0) {
+    } else if (strcmp(func_name, "close") == 0) {
         free(func_name);
         return execute_close(marshallMsg);
-    }
-    else if (strcmp(func_name, "read") == 0) {
+    } else if (strcmp(func_name, "read") == 0) {
         free(func_name);
         return execute_read(marshallMsg);
-    }
-    else if (strcmp(func_name, "write") == 0) {
+    } else if (strcmp(func_name, "write") == 0) {
         free(func_name);
         return execute_write(marshallMsg);
-    }
-    else if (strcmp(func_name, "lseek") == 0) {
+    } else if (strcmp(func_name, "lseek") == 0) {
         free(func_name);
         return execute_lseek(marshallMsg);
-    }
-    else if (strcmp(func_name, "__xstat") == 0) {
+    } else if (strcmp(func_name, "__xstat") == 0) {
         free(func_name);
         return execute_stat(marshallMsg);
-    }
-    else if (strcmp(func_name, "unlink") == 0) {
+    } else if (strcmp(func_name, "unlink") == 0) {
         free(func_name);
         return execute_unlink(marshallMsg);
-    }
-    else if (strcmp(func_name, "getdirentries") == 0) {
+    } else if (strcmp(func_name, "getdirentries") == 0) {
         free(func_name);
         return execute_getdirentries(marshallMsg);
-    }
-    else if (strcmp(func_name, "getdirtree") == 0) {
+    } else if (strcmp(func_name, "getdirtree") == 0) {
         free(func_name);
         return execute_getdirtree(marshallMsg);
-    }
-    else {
+    } else {
         printf("function %s is not supported in RPC\n", func_name);
-    }
+    } // if the function name is not supported, return error string to mylib
     char *error_msg = (char *)malloc(50 * sizeof(char));
     strcpy(error_msg, "Function not supported");
+    
     free(func_name);
+    
     return error_msg;
 }
 
+/*
+ * Unmarshall and execute open syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    fd or -errno
+ */
 char *execute_open(char* msg) {
     char *pathname;
     int flags;
@@ -141,6 +145,12 @@ char *execute_open(char* msg) {
     return add_len(ret_val, 30); // return value: fd or -errno
 }
 
+/*
+ * Unmarshall and execute close syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    0 or -errno
+ */
 char *execute_close(char* msg) {
     int fd = atoi(&msg[6]); // parameters
     fd -= FD_OFFSET;
@@ -154,6 +164,12 @@ char *execute_close(char* msg) {
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
 
+/*
+ * Unmarshall and execute read syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    bytes_read | content
+ */
 char *execute_read(char* msg) {
     int idx = 5;
     int fd;
@@ -194,6 +210,12 @@ char *execute_read(char* msg) {
     return ret_val; // return value: bytes_read|content
 }
 
+/*
+ * Unmarshall and execute write syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    bytes_written OR -errno
+ */
 char *execute_write(char* msg) {
     int fd = 0;
     char *buf;
@@ -231,6 +253,12 @@ char *execute_write(char* msg) {
     return add_len(ret_val, 30); // return value: -errno OR bytes_written
 }
 
+/*
+ * Unmarshall and execute lseek syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    offset OR -errno
+ */
 char *execute_lseek(char* msg) {
     int fd;
     off_t offset;
@@ -257,6 +285,12 @@ char *execute_lseek(char* msg) {
     return add_len(ret_val, 30); // return value: offset or -errno
 }
 
+/*
+ * Unmarshall and execute __xstat syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    0 OR -errno
+ */
 char *execute_stat(char* msg) {
     int ver;
     char *path;
@@ -288,6 +322,12 @@ char *execute_stat(char* msg) {
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
 
+/*
+ * Unmarshall and execute unlink syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    0 OR -errno
+ */
 char *execute_unlink(char* msg) {
     char *pathname = &msg[7];
 
@@ -300,6 +340,12 @@ char *execute_unlink(char* msg) {
     return add_len(ret_val, 30); // return value: 0 or -errno
 }
 
+/*
+ * Unmarshall and execute getdirentries syscall on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    bytes_transferred|contents OR -errno
+ */
 char *execute_getdirentries(char* msg) {
     int fd;
     char *buf;
@@ -344,9 +390,15 @@ char *execute_getdirentries(char* msg) {
     }
     traverse[i] = '\0';
     free(buf);
-    return ret; // return value: -errno OR bytes_transferrer|contents
+    return ret; // return value: -errno OR bytes_transferred|contents
 }
 
+/*
+ * Unmarshall and execute getdirtree function on server
+ * Then marshall the return value and content in a char array
+ * @return:
+ *    len_of_return|contents OR -errno
+ */
 char *execute_getdirtree(char* msg) {
     char *path = &msg[11]; // parameter
 
@@ -397,7 +449,7 @@ int main(int argc, char **argv) {
     while (1) {
         // wait for next client, get session socket
         sa_size = sizeof(struct sockaddr_in);
-        // TODO: spawn a thread to deal with concurrent clients
+        // spawn a thread to deal with concurrent clients
         int sessfd = accept(sockfd, (struct sockaddr *)&cli, &sa_size);
         if (sessfd < 0)	err(1, 0);
 
@@ -439,9 +491,14 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+/*
+ * Craete a new pthread to accept new socket connection from mylib
+ */
 void *accept_new_client(void *arg) {
-    // get messages and send replies to this client,
-    // until it goes a way
+    /* 
+     * Get messages and send replies to this client,
+     * until it goes a way
+     */
     struct pthread_arg_t *thread_arg = (struct pthread_arg_t *)arg;
     int sessfd = thread_arg->sessfd;
     char *buf = (char *)malloc(MAXWRITELEN * sizeof(char));
@@ -454,7 +511,7 @@ void *accept_new_client(void *arg) {
         buf[rv] = 0; // null terminate string to print
 
         // Unmarshalling the message, and execute it
-        char *ret_val = unmarshalling_method(buf); //TODO: return number of characters, num|string
+        char *ret_val = unmarshalling_method(buf); // return number of characters, num|string
         int len = 0, lenlen = 0;
         char *start = ret_val;
         while (*start != '|') {
@@ -465,8 +522,6 @@ void *accept_new_client(void *arg) {
         start++;
 
         // Send it back to client
-		//ret_val[strlen(ret_val)] = '\0';
-	
         send(sessfd, ret_val, len + lenlen + 1, 0);
 
         if (rv < 0)	err(1, 0);
@@ -477,6 +532,15 @@ void *accept_new_client(void *arg) {
     return NULL;
 }
 
+/*
+ * Add length infomation to a string by append length in front of a char array
+ * then separate them with a '|'
+ * @param:
+ *    str: char array to append length info
+ *    count: number of characters to allocate the new char array
+ * @return:
+ *    Ptr to the new char array
+ */
 char *add_len(char *str, int count) {
     int len = strlen(str);
     char *ret = (char *)malloc(count * sizeof(char));
@@ -485,6 +549,16 @@ char *add_len(char *str, int count) {
     return strcat(ret, str);
 }
 
+/*
+ * Add negative length infomation to a string by append length in front of a char array
+ * then separate them with a '|'
+ * This function is used in read syscall to distinguish read content and error number
+ * @param:
+ *    str: char array to append length info
+ *    count: number of characters to allocate the new char array
+ * @return:
+ *    Ptr to the new char array
+ */
 char *add_neg_len(char *str, int count) {
     int len = strlen(str);
     char *ret = (char *)malloc(count * sizeof(char));
