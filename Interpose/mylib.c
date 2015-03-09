@@ -453,11 +453,22 @@ int unlink(const char *pathname) {
 
 ssize_t (*orig_getdirentries)(int fd, char *buf, size_t nbytes, off_t *basep);
 
+/*
+ * getdirentries system call with data serialization and deserialization
+ * @param:
+ *    fd: file descriptor
+ *    buf: buffer of the directory to read
+ *    nbytes: up to nbytes will be transferred
+ *    basep: write the position of the block read in to the loc pointed by basep
+ * @return:
+ *    0 if succeed, -1 if error
+ */
 ssize_t getdirentries(int fd, char *buf, size_t nbytes, off_t *basep) {
+    fprintf(stderr, "mylib: getdirentries called for fd: %d\n", fd);
 	if (fd < FD_OFFSET) {
 		return orig_getdirentries(fd, buf, nbytes, basep);
 	}
-	fprintf(stderr, "mylib: getdirentries called for fd: %d\n", fd);
+    
 	char *argv = (char *)malloc(40 * sizeof(char));
 
 	strcpy(argv, int_to_str(fd));
@@ -495,8 +506,13 @@ ssize_t getdirentries(int fd, char *buf, size_t nbytes, off_t *basep) {
 	return ret_num;
 }
 
-struct dirtreenode* (*orig_getdirtree)(const char *path);
-
+/*
+ * getdirtree function with data serialization and deserialization
+ * @param:
+ *    path: path of the directory to get its directory tree
+ * @return:
+ *    dirtreenode structure which contains information of the directory
+ */
 struct dirtreenode* getdirtree(const char *path) {
 	fprintf(stderr, "mylib: getdirtree called for path: %s\n", path);
 
@@ -518,24 +534,42 @@ struct dirtreenode* getdirtree(const char *path) {
 
 void (*orig_freedirtree)(struct dirtreenode* dt);
 
+/*
+ * freedirtree function with data serialization and deserialization
+ * @param:
+ *    dt: directory tree node to free
+ * @return:
+ */
 void freedirtree(struct dirtreenode* dt) {
 	fprintf(stderr, "mylib: freedirtree called\n");
+    /*
+     * No need to rpc this function, because server will call freedirtree after getdirtree
+     * Therefore, freedirtree from local is enough
+     */
 	orig_freedirtree(dt);
 	return; 
 }
 
-// This function is automatically called when program is started
+/* This function is automatically called when program is started */
 void _init(void) {
-	// set function pointer orig_open to point to the original open function
+	/* set function pointer orig_xxx to point to the original xxx function */
 	orig_close = dlsym(RTLD_NEXT, "close");
 	orig_read = dlsym(RTLD_NEXT, "read");
 	orig_write = dlsym(RTLD_NEXT, "write");
 	orig_lseek = dlsym(RTLD_NEXT, "lseek");
 	orig_getdirentries = dlsym(RTLD_NEXT, "getdirentries");
 	orig_freedirtree = dlsym(RTLD_NEXT, "freedirtree");
-
 }
 
+/*
+ * Get content from the return value
+ * Return value is composed of:
+ * length of the content | content
+ * @param: 
+ *    ret_val: char array of the return value
+ * @return: 
+ *    ptr to the content
+ */
 char *get_ret_content(char *ret_val) {
 	while (*ret_val != '|')	ret_val++;
 	ret_val++;
