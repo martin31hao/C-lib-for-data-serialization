@@ -13,7 +13,6 @@
 
 #include "mystub.h"
 
-#define MAXMSGLEN 2000 /* Maximum length of receiving message from server */
 #define MAXMSHLEN 2000 /* Maximum length of the marshall message */
 #define INTSIZE 13 /* Size of char representation of int */
 #define ULISIZE 26 /* Size of char representation of unsigned long */
@@ -119,120 +118,7 @@ off_t ato_off_t(const char *str) {
  */
 struct stat *ato_stat(char *str_stat) {
     struct stat* param = (struct stat*)malloc(sizeof(struct stat)); // parameters
-
-    char *traverse = str_stat;
-    char *pivot = traverse;
-    int len = 0;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_dev = ato_dev_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_ino = ato_ino_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_mode = ato_mode_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_nlink = ato_nlink_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_uid = ato_uid_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_gid = ato_gid_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_rdev = ato_dev_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_size = ato_off_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_blksize = ato_blksize_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_blocks = ato_blkcnt_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_atime = ato_time_t(pivot);
-    pivot = traverse;
-
-    while (*traverse != '\t') {
-        traverse++;
-        len++;
-    }
-    *traverse = '\0';
-    traverse++;
-    param->st_mtime = ato_time_t(pivot);
-    pivot = traverse;
-
-    param->st_ctime = ato_time_t(pivot);
+    memcpy(param, str_stat, sizeof(struct stat));
 
     return param;
 }
@@ -479,8 +365,9 @@ char *int_to_str(int num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -492,7 +379,11 @@ char *int_to_str(int num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -510,15 +401,25 @@ char *size_t_to_str(size_t num) {
     int cnt = 0;
 
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
         num /= 10;
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -542,8 +443,9 @@ char *ssize_t_to_str(ssize_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -555,7 +457,11 @@ char *ssize_t_to_str(ssize_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -579,8 +485,9 @@ char *mode_t_to_str(mode_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
 
@@ -593,7 +500,11 @@ char *mode_t_to_str(mode_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -617,8 +528,9 @@ char *off_t_to_str(off_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -630,7 +542,11 @@ char *off_t_to_str(off_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 char *char_to_str(char* str) {
@@ -650,48 +566,8 @@ char *voidptr_to_str(void *ptr) {
  */
 char *statptr_to_str(struct stat *buf) {
     char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
+    memcpy(str, buf, sizeof(struct stat));
     
-    /*
-     * each member in stat struct is separated by a '\t' character
-     */
-    
-    strcpy(str, dev_t_to_str(buf->st_dev));
-    strcat(str, "\t");
-    
-    strcat(str, ino_t_to_str(buf->st_ino));
-    strcat(str, "\t");
-
-    strcat(str, mode_t_to_str(buf->st_mode));
-    strcat(str, "\t");
-
-    strcat(str, nlink_t_to_str(buf->st_nlink));
-    strcat(str, "\t");
-
-    strcat(str, uid_t_to_str(buf->st_uid));
-    strcat(str, "\t");
-
-    strcat(str, gid_t_to_str(buf->st_gid));
-    strcat(str, "\t");
-
-    strcat(str, dev_t_to_str(buf->st_rdev));
-    strcat(str, "\t");
-
-    strcat(str, off_t_to_str(buf->st_size));
-    strcat(str, "\t");
-
-    strcat(str, blksize_t_to_str(buf->st_blksize));
-    strcat(str, "\t");
-
-    strcat(str, blkcnt_t_to_str(buf->st_blocks));
-    strcat(str, "\t");
-
-    strcat(str, time_t_to_str(buf->st_atime));
-    strcat(str, "\t");
-
-    strcat(str, time_t_to_str(buf->st_mtime));
-    strcat(str, "\t");
-
-    strcat(str, time_t_to_str(buf->st_ctime));
     return str;
 }
 
@@ -707,10 +583,14 @@ char *dirtreenode_to_str(struct dirtreenode* node) {
     char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
     strcpy(str, node->name);
     strcat(str, "\t");
-    strcat(str, int_to_str(node->num_subdirs));
+    char *num_subdirs_str = int_to_str(node->num_subdirs);
+    strcat(str, num_subdirs_str);
+    free(num_subdirs_str);
     strcat(str, "\t(");
     for (i = 0; i < node->num_subdirs; i++) {
-        strcat(str, dirtreenode_to_str(node->subdirs[i]));
+        char *subtree_str = dirtreenode_to_str(node->subdirs[i]);
+        strcat(str, subtree_str);
+        free(subtree_str);
     }
     strcat(str, ")");
     return str;
@@ -737,8 +617,9 @@ char *dev_t_to_str(dev_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -750,7 +631,11 @@ char *dev_t_to_str(dev_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -774,8 +659,9 @@ char *ino_t_to_str(ino_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -787,7 +673,11 @@ char *ino_t_to_str(ino_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -811,8 +701,9 @@ char *nlink_t_to_str(nlink_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -824,7 +715,11 @@ char *nlink_t_to_str(nlink_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -848,8 +743,9 @@ char *uid_t_to_str(uid_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -861,7 +757,11 @@ char *uid_t_to_str(uid_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -885,8 +785,9 @@ char *gid_t_to_str(gid_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -898,7 +799,11 @@ char *gid_t_to_str(gid_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -922,8 +827,9 @@ char *blksize_t_to_str(blksize_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -935,7 +841,11 @@ char *blksize_t_to_str(blksize_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -959,8 +869,9 @@ char *blkcnt_t_to_str(blkcnt_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -972,7 +883,11 @@ char *blkcnt_t_to_str(blkcnt_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 /*
@@ -996,8 +911,9 @@ char *time_t_to_str(time_t num) {
         num = -num;
     }
     if (num == 0) {
-        str[type_size-2] = '0';
-        return &str[type_size-2];
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
     }
     while (num) {
         str[type_size-2-cnt] = num % 10 + '0';
@@ -1009,7 +925,11 @@ char *time_t_to_str(time_t num) {
         str[type_size-2-cnt] = '-';
         cnt++;
     }
-    return &str[type_size-1-cnt];
+    int i;
+    for (i = 0; i <= cnt; i++) {
+        str[i] = str[type_size-1-cnt + i];
+    }
+    return str;
 }
 
 void check_param_type(const char *subtoken, const char *type, const char* func_name) {
