@@ -116,7 +116,7 @@ char *connect_to_server(char* msg, int len) {
         // Create socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);       // TCP/IP socket
         if (sockfd < 0) {
-			err(1, 0);                        // in case of error
+            err(1, 0);                        // in case of error
             firstConnect = 1;
         }
 
@@ -129,8 +129,8 @@ char *connect_to_server(char* msg, int len) {
         rv = connect(sockfd, (struct sockaddr*)&srv, sizeof(struct sockaddr));
         if (rv < 0) {
             err(1, 0);
-			firstConnect = 1;
-		}
+            firstConnect = 1;
+        }
     }
 
 	// send message to server
@@ -207,31 +207,31 @@ int open(const char *pathname, int flags, ...) {
  *    0 if succeed, -1 if not
  */
 int close(int fd) {
-	fprintf(stderr, "mylib: close called for fd: %d\n", fd);
+    fprintf(stderr, "mylib: close called for fd: %d\n", fd);
     /*
      * if the fd is smaller than the fd provided by our mylib,
      * then the original close should be called instead
      */
-	if (fd < FD_OFFSET) {
-		return orig_close(fd);
-	}
-	char *argv;
+    if (fd < FD_OFFSET) {
+        return orig_close(fd);
+    }
+    char *argv;
     
     /* allocate 12 bytes for serialization */
-	argv = (char*)malloc(12 * sizeof(char));
+    argv = (char*)malloc(12 * sizeof(char));
 
-	strcpy(argv, int_to_str(fd));
+    strcpy(argv, int_to_str(fd));
 	
-	char* msg = marshalling_method("close", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
+    char* msg = marshalling_method("close", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
     
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
-	return atoi(ret_val);
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
+    return atoi(ret_val);
 }
 
 ssize_t (*orig_read)(int fd, void *buf, size_t count);
@@ -246,25 +246,25 @@ ssize_t (*orig_read)(int fd, void *buf, size_t count);
  *    bytes of data is read if succeed, -1 if not
  */
 ssize_t read(int fd, void *buf, size_t count) {
-	fprintf(stderr, "mylib: read called for fd: %d\n", fd);
+    fprintf(stderr, "mylib: read called for fd: %d\n", fd);
     
     /*
      * if the fd is smaller than the fd provided by our mylib,
      * then the original read should be called instead
      */
-	if (fd < FD_OFFSET) {
-		return orig_read(fd, buf, count);
-	}
+    if (fd < FD_OFFSET) {
+        return orig_read(fd, buf, count);
+    }
     
     /* allocate 30 bytes for serialization */
-	char *argv = (char *)malloc((30) * sizeof(char));
+    char *argv = (char *)malloc((30) * sizeof(char));
 
-	strcpy(argv, int_to_str(fd));
-	strcat(argv, "|");
-	strcat(argv, size_t_to_str(count));
+    strcpy(argv, int_to_str(fd));
+    strcat(argv, "|");
+    strcat(argv, size_t_to_str(count));
 
-	char *msg = marshalling_method("read", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
+    char *msg = marshalling_method("read", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
 
     /*
      * the return message format is
@@ -273,23 +273,23 @@ ssize_t read(int fd, void *buf, size_t count) {
      * OR
      * "the negative length of errno | errno"
      */
-	char *number = ret_val;
+    char *number = ret_val;
 
-	while (*ret_val != '|') {
-		ret_val++;
-	}
-	*ret_val = '\0';
-	ret_val++;
+    while (*ret_val != '|') {
+        ret_val++;
+    }
+    *ret_val = '\0';
+    ret_val++;
 	
-	ssize_t byte_read = ato_ssize_t(number);
+    ssize_t byte_read = ato_ssize_t(number);
     
-	if (*number == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "read errno: %d\n", errno);
-		return -1;
-	}
-	memcpy((char *)buf, ret_val, byte_read);
-	return byte_read;
+    if (*number == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "read errno: %d\n", errno);
+        return -1;
+    }
+    memcpy((char *)buf, ret_val, byte_read);
+    return byte_read;
 }
 
 ssize_t (*orig_write)(int fd, void *buf, size_t count);
@@ -304,33 +304,33 @@ ssize_t (*orig_write)(int fd, void *buf, size_t count);
  *    bytes of data is write if succeed, -1 if not
  */
 ssize_t write(int fd, void *buf, size_t count) {
-	fprintf(stderr, "mylib: write called for fd: %d\n", fd);
+    fprintf(stderr, "mylib: write called for fd: %d\n", fd);
     
     /*
      * if the fd is smaller than the fd provided by our mylib,
      * then the original write should be called instead
      */
-	if (fd < FD_OFFSET) {
-		return orig_write(fd, buf, count);
-	}
+    if (fd < FD_OFFSET) {
+        return orig_write(fd, buf, count);
+    }
     
-	char *argv = (char *)malloc((count + 20) * sizeof(char));
-	fprintf(stderr, "write count: %d\n", (int)count);
+    char *argv = (char *)malloc((count + 20) * sizeof(char));
+    fprintf(stderr, "write count: %d\n", (int)count);
 
-	strcpy(argv, int_to_str(fd));
-	strcat(argv, "|");
-	strcat(argv, size_t_to_str(count));
-	strcat(argv, "|");
+    strcpy(argv, int_to_str(fd));
+    strcat(argv, "|");
+    strcat(argv, size_t_to_str(count));
+    strcat(argv, "|");
 
-	int tmpLen = strlen(argv);
+    int tmpLen = strlen(argv);
 		
-	char *traverse = argv;
-	while (*traverse != '\0') traverse++;
+    char *traverse = argv;
+    while (*traverse != '\0') traverse++;
 	
-	memcpy(traverse, buf, count);
+    memcpy(traverse, buf, count);
 	
-	char *msg = marshalling_method("write",  argv, tmpLen + count);
-	char *ret_val = connect_to_server(msg, tmpLen + count + 6);
+    char *msg = marshalling_method("write",  argv, tmpLen + count);
+    char *ret_val = connect_to_server(msg, tmpLen + count + 6);
     
     /*
      * the return message format is
@@ -340,16 +340,16 @@ ssize_t write(int fd, void *buf, size_t count) {
      * "negative errno"
      */
     
-	ret_val = get_ret_content(ret_val);
+    ret_val = get_ret_content(ret_val);
 
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
     
-	free(argv);
-	return ato_ssize_t(ret_val);
+    free(argv);
+    return ato_ssize_t(ret_val);
 }
 
 off_t (*orig_lseek)(int fd, off_t offset, int whence);
@@ -369,28 +369,28 @@ off_t lseek(int fd, off_t offset, int whence) {
      * if the fd is smaller than the fd provided by our mylib,
      * then the original write should be called instead
      */
-	if (fd < FD_OFFSET) {
-		return orig_lseek(fd, offset, whence);
-	}
+    if (fd < FD_OFFSET) {
+        return orig_lseek(fd, offset, whence);
+    }
 	
-	char *argv = (char *)malloc(40 * sizeof(char));
+    char *argv = (char *)malloc(40 * sizeof(char));
 
-	strcpy(argv, int_to_str(fd));
-	strcat(argv, "|");
-	strcat(argv, off_t_to_str(offset));
-	strcat(argv, "|");
-	strcat(argv, int_to_str(whence));
+    strcpy(argv, int_to_str(fd));
+    strcat(argv, "|");
+    strcat(argv, off_t_to_str(offset));
+    strcat(argv, "|");
+    strcat(argv, int_to_str(whence));
 	
-	char* msg = marshalling_method("lseek", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
-	free(argv);
-	return ato_off_t(ret_val);
+    char* msg = marshalling_method("lseek", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
+    free(argv);
+    return ato_off_t(ret_val);
 }
 
 /*
@@ -403,26 +403,26 @@ off_t lseek(int fd, off_t offset, int whence) {
  *    0 if succeed, -1 if error
  */
 int __xstat(int ver, const char *path, struct stat *stat_buf) {
-	fprintf(stderr, "mylib: stat called for path: %s\n", path);
+    fprintf(stderr, "mylib: stat called for path: %s\n", path);
 
-	char *argv = (char *)malloc(1000 * sizeof(char));
-	strcpy(argv, int_to_str(ver));
-	strcat(argv, "|");
-	strcat(argv, path);
-	strcat(argv, "|");
-	strcat(argv, statptr_to_str(stat_buf));
+    char *argv = (char *)malloc(1000 * sizeof(char));
+    strcpy(argv, int_to_str(ver));
+    strcat(argv, "|");
+    strcat(argv, path);
+    strcat(argv, "|");
+    strcat(argv, statptr_to_str(stat_buf));
 	
-	char* msg = marshalling_method("__xstat", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
+    char* msg = marshalling_method("__xstat", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
     
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
-	free(argv);
-	return atoi(ret_val);
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
+    free(argv);
+    return atoi(ret_val);
 }
 
 /*
@@ -433,22 +433,22 @@ int __xstat(int ver, const char *path, struct stat *stat_buf) {
  *    0 if succeed, -1 if error
  */
 int unlink(const char *pathname) {
-	fprintf(stderr, "mylib: unlink called for path: %s\n", pathname);
-	char *argv = (char *)malloc(1000 * sizeof(char));
+    fprintf(stderr, "mylib: unlink called for path: %s\n", pathname);
+    char *argv = (char *)malloc(1000 * sizeof(char));
 
-	strcpy(argv, pathname);
+    strcpy(argv, pathname);
 	
-	char* msg = marshalling_method("unlink", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
+    char* msg = marshalling_method("unlink", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
     
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
-	free(argv);
-	return atoi(ret_val);
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
+    free(argv);
+    return atoi(ret_val);
 }
 
 ssize_t (*orig_getdirentries)(int fd, char *buf, size_t nbytes, off_t *basep);
@@ -465,45 +465,45 @@ ssize_t (*orig_getdirentries)(int fd, char *buf, size_t nbytes, off_t *basep);
  */
 ssize_t getdirentries(int fd, char *buf, size_t nbytes, off_t *basep) {
     fprintf(stderr, "mylib: getdirentries called for fd: %d\n", fd);
-	if (fd < FD_OFFSET) {
-		return orig_getdirentries(fd, buf, nbytes, basep);
-	}
+    if (fd < FD_OFFSET) {
+        return orig_getdirentries(fd, buf, nbytes, basep);
+    }
     
-	char *argv = (char *)malloc(40 * sizeof(char));
+    char *argv = (char *)malloc(40 * sizeof(char));
 
-	strcpy(argv, int_to_str(fd));
-	strcat(argv, "|");
-	strcat(argv, size_t_to_str(nbytes));
-	strcat(argv, "|");
-	strcat(argv, off_t_to_str(*basep));
+    strcpy(argv, int_to_str(fd));
+    strcat(argv, "|");
+    strcat(argv, size_t_to_str(nbytes));
+    strcat(argv, "|");
+    strcat(argv, off_t_to_str(*basep));
 	
-	char* msg = marshalling_method("getdirentries", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	fprintf(stderr, "client: getdiren ret_val :%s\n", ret_val);
+    char* msg = marshalling_method("getdirentries", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    fprintf(stderr, "client: getdiren ret_val :%s\n", ret_val);
 
-	char *number = ret_val;
-	while (*number != '|') {
-		number++;
-	}
-	*number = '\0';
-	number++;
+    char *number = ret_val;
+    while (*number != '|') {
+        number++;
+    }
+    *number = '\0';
+    number++;
 
-	ssize_t ret_num = ato_ssize_t(ret_val);
-	if (*number == '-') {
-		errno = -atoi(number);
-		fprintf(stderr, "errno: %d\n", errno);
-		return -1;
-	}
+    ssize_t ret_num = ato_ssize_t(ret_val);
+    if (*number == '-') {
+        errno = -atoi(number);
+        fprintf(stderr, "errno: %d\n", errno);
+        return -1;
+    }
 	
-	int i;
-	for (i = 0; i < ret_num; i++) {
-		if (number[i] != '|') // TODO: Will '|' cause bugs
-			buf[i] = number[i];
-		else	buf[i] = '\0';
-	}
+    int i;
+    for (i = 0; i < ret_num; i++) {
+        if (number[i] != '|') // TODO: Will '|' cause bugs
+            buf[i] = number[i];
+        else	buf[i] = '\0';
+    }
 
-	free(argv);
-	return ret_num;
+    free(argv);
+    return ret_num;
 }
 
 /*
@@ -514,22 +514,22 @@ ssize_t getdirentries(int fd, char *buf, size_t nbytes, off_t *basep) {
  *    dirtreenode structure which contains information of the directory
  */
 struct dirtreenode* getdirtree(const char *path) {
-	fprintf(stderr, "mylib: getdirtree called for path: %s\n", path);
+    fprintf(stderr, "mylib: getdirtree called for path: %s\n", path);
 
-	char *argv = (char *)malloc(1000 * sizeof(char));
-	strcpy(argv, path);
+    char *argv = (char *)malloc(1000 * sizeof(char));
+    strcpy(argv, path);
 	
-	char* msg = marshalling_method("getdirtree", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg));
-	ret_val = get_ret_content(ret_val);
-	if (*ret_val == '-') {
-		errno = -atoi(ret_val);
-		fprintf(stderr, "errno: %d\n", errno);
-		return NULL;
-	}
-	ret_dirtreenode = ato_dirtreenode(ret_val);
-	free(argv);
-	return ret_dirtreenode;
+    char* msg = marshalling_method("getdirtree", argv, strlen(argv));
+    char *ret_val = connect_to_server(msg, strlen(msg));
+    ret_val = get_ret_content(ret_val);
+    if (*ret_val == '-') {
+        errno = -atoi(ret_val);
+        fprintf(stderr, "errno: %d\n", errno);
+        return NULL;
+    }
+    ret_dirtreenode = ato_dirtreenode(ret_val);
+    free(argv);
+    return ret_dirtreenode;
 }
 
 void (*orig_freedirtree)(struct dirtreenode* dt);
@@ -541,24 +541,24 @@ void (*orig_freedirtree)(struct dirtreenode* dt);
  * @return:
  */
 void freedirtree(struct dirtreenode* dt) {
-	fprintf(stderr, "mylib: freedirtree called\n");
+    fprintf(stderr, "mylib: freedirtree called\n");
     /*
      * No need to rpc this function, because server will call freedirtree after getdirtree
      * Therefore, freedirtree from local is enough
      */
-	orig_freedirtree(dt);
-	return; 
+    orig_freedirtree(dt);
+    return;
 }
 
 /* This function is automatically called when program is started */
 void _init(void) {
 	/* set function pointer orig_xxx to point to the original xxx function */
-	orig_close = dlsym(RTLD_NEXT, "close");
-	orig_read = dlsym(RTLD_NEXT, "read");
-	orig_write = dlsym(RTLD_NEXT, "write");
-	orig_lseek = dlsym(RTLD_NEXT, "lseek");
-	orig_getdirentries = dlsym(RTLD_NEXT, "getdirentries");
-	orig_freedirtree = dlsym(RTLD_NEXT, "freedirtree");
+    orig_close = dlsym(RTLD_NEXT, "close");
+    orig_read = dlsym(RTLD_NEXT, "read");
+    orig_write = dlsym(RTLD_NEXT, "write");
+    orig_lseek = dlsym(RTLD_NEXT, "lseek");
+    orig_getdirentries = dlsym(RTLD_NEXT, "getdirentries");
+    orig_freedirtree = dlsym(RTLD_NEXT, "freedirtree");
 }
 
 /*
@@ -571,7 +571,7 @@ void _init(void) {
  *    ptr to the content
  */
 char *get_ret_content(char *ret_val) {
-	while (*ret_val != '|')	ret_val++;
-	ret_val++;
-	return ret_val;
+    while (*ret_val != '|')	ret_val++;
+    ret_val++;
+    return ret_val;
 }
