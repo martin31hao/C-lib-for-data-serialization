@@ -1,3 +1,13 @@
+/*
+ * @author: Xinkai Wang
+ * @contact: xinkaiw@andrew.cmu.edu
+ *
+ * mystub.h
+ * Define utility functions for mylib, the main capabilities are:
+ *     1. Convert integer type to char array
+ *     2. Convert char array into integer type
+ */
+
 #define _GNU_SOURCE
 
 #include <dlfcn.h>
@@ -6,7 +16,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-//#include <unistd.h>
 #include <stdarg.h>
 #include <string.h>
 #include <err.h>
@@ -16,6 +25,7 @@
 #include <arpa/inet.h>
 #include "dirtree.h"
 
+/* Functions that convert various integer type into char array */
 char *int_to_str(int num);
 char *size_t_to_str(size_t num);
 char *ssize_t_to_str(ssize_t num);
@@ -34,6 +44,7 @@ char *blksize_t_to_str(blksize_t num);
 char *blkcnt_t_to_str(blkcnt_t num);
 char *time_t_to_str(time_t num);
 
+/* Functions that convert char array into various integer type */
 int ato_int(const char *str);
 size_t ato_size_t(const char *str);
 ssize_t ato_ssize_t(const char *str);
@@ -50,4 +61,5 @@ blksize_t ato_blksize_t(const char *str);
 blkcnt_t ato_blkcnt_t(const char *str);
 time_t ato_time_t(const char *str);
 
+/* Check whether parameter type is consistent */
 void check_param_type(const char *subtoken, const char *type, const char *func_name);
