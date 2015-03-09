@@ -153,8 +153,8 @@ char *connect_to_server(char* msg, int len) {
  * open system call with data serialization and deserialization
  * @param:
  *    pathname: path name of a file
- *    flags: 
- *    mode:
+ *    flags: open options like O_RDONLY, O_WRONLY, etc
+ *    mode: this parameter is needed if flag is O_CREAT
  * @return:
  *    file descriptor if acquired successfully from server, -1 if failed
  */
@@ -236,22 +236,43 @@ int close(int fd) {
 
 ssize_t (*orig_read)(int fd, void *buf, size_t count);
 
+/*
+ * read system call with data serialization and deserialization
+ * @param:
+ *    fd: file descriptor
+ *    buf: buffer in which data is read to
+ *    count: maximum number of data to read
+ * @return:
+ *    bytes of data is read if succeed, -1 if not
+ */
 ssize_t read(int fd, void *buf, size_t count) {
 	fprintf(stderr, "mylib: read called for fd: %d\n", fd);
+    
+    /*
+     * if the fd is smaller than the fd provided by our mylib,
+     * then the original read should be called instead
+     */
 	if (fd < FD_OFFSET) {
 		return orig_read(fd, buf, count);
 	}
+    
+    /* allocate 30 bytes for serialization */
 	char *argv = (char *)malloc((30) * sizeof(char));
 
 	strcpy(argv, int_to_str(fd));
 	strcat(argv, "|");
 	strcat(argv, size_t_to_str(count));
 
-	fprintf(stderr, "read size: %d\n", (int) count);
+	char *msg = marshalling_method("read", argv, strlen(argv));
+	char *ret_val = connect_to_server(msg, strlen(msg));
 
-	char* msg = marshalling_method("read", argv, strlen(argv));
-	char *ret_val = connect_to_server(msg, strlen(msg)); // TODO: 2nd para should be refined
-
+    /*
+     * the return message format is
+     * EITHER
+     * "number of bytes read | contents read"
+     * OR
+     * "the negative length of errno | errno"
+     */
 	char *number = ret_val;
 
 	while (*ret_val != '|') {
@@ -273,11 +294,26 @@ ssize_t read(int fd, void *buf, size_t count) {
 
 ssize_t (*orig_write)(int fd, void *buf, size_t count);
 
+/*
+ * write system call with data serialization and deserialization
+ * @param:
+ *    fd: file descriptor
+ *    buf: buffer in which data is write from
+ *    count: maximum number of data to write
+ * @return:
+ *    bytes of data is write if succeed, -1 if not
+ */
 ssize_t write(int fd, void *buf, size_t count) {
 	fprintf(stderr, "mylib: write called for fd: %d\n", fd);
+    
+    /*
+     * if the fd is smaller than the fd provided by our mylib,
+     * then the original write should be called instead
+     */
 	if (fd < FD_OFFSET) {
 		return orig_write(fd, buf, count);
 	}
+    
 	char *argv = (char *)malloc((count + 20) * sizeof(char));
 	fprintf(stderr, "write count: %d\n", (int)count);
 
@@ -293,11 +329,17 @@ ssize_t write(int fd, void *buf, size_t count) {
 	
 	memcpy(traverse, buf, count);
 	
-	
 	char *msg = marshalling_method("write",  argv, tmpLen + count);
-	fprintf(stderr, "write message: %s\n", msg);
 	char *ret_val = connect_to_server(msg, tmpLen + count + 6);
-	fprintf(stderr, "byte returns: %s\n", ret_val);
+    
+    /*
+     * the return message format is
+     * EITHER
+     * "number of bytes write"
+     * OR
+     * "negative errno"
+     */
+    
 	ret_val = get_ret_content(ret_val);
 
 	if (*ret_val == '-') {
@@ -305,22 +347,37 @@ ssize_t write(int fd, void *buf, size_t count) {
 		fprintf(stderr, "errno: %d\n", errno);
 		return -1;
 	}
+    
 	free(argv);
 	return ato_ssize_t(ret_val);
 }
 
 off_t (*orig_lseek)(int fd, off_t offset, int whence);
 
+/*
+ * lseek system call with data serialization and deserialization
+ * @param:
+ *    fd: file descriptor
+ *    offset: offset from which the file is point to
+ *    whence: SEEK_SET, SEEK_CUR, SEEK_END
+ * @return:
+ *    resulting offset location from the beginning of the file, -1 if error
+ */
 off_t lseek(int fd, off_t offset, int whence) {
+    fprintf(stderr, "mylib: lseek called for fd: %d\n", fd);
+    /*
+     * if the fd is smaller than the fd provided by our mylib,
+     * then the original write should be called instead
+     */
 	if (fd < FD_OFFSET) {
 		return orig_lseek(fd, offset, whence);
 	}
-	fprintf(stderr, "mylib: lseek called for fd: %d\n", fd);
+	
 	char *argv = (char *)malloc(40 * sizeof(char));
 
 	strcpy(argv, int_to_str(fd));
 	strcat(argv, "|");
-	strcat(argv, off_t_to_str(offset)); // potential bug: nothing in buf
+	strcat(argv, off_t_to_str(offset));
 	strcat(argv, "|");
 	strcat(argv, int_to_str(whence));
 	
