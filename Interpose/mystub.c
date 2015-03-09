@@ -1,11 +1,10 @@
 #include "mystub.h"
 
-#define MAXMSGLEN 1000
-#define MAXMSHLEN 1000
-#define INTSIZE 13
-#define ULISIZE 26
-#define LONGSIZE 26
-#define MAXFUNCSIZE 20
+#define MAXMSGLEN 2000 /* Maximum length of receiving message from server */
+#define MAXMSHLEN 2000 /* Maximum length of the marshall message */
+#define INTSIZE 13 /* Size of char representation of int */
+#define ULISIZE 26 /* Size of char representation of unsigned long */
+#define LONGSIZE 26 /* Size of char representation of long */
 
 void check_param_type(const char *subtoken, const char *type, const char* func_name) {
         if (strcmp(subtoken, type) != 0) {
@@ -13,6 +12,13 @@ void check_param_type(const char *subtoken, const char *type, const char* func_n
         }
 }
 
+/*
+ * Convert from char array to int
+ * @param: 
+ *    str: char ptr to convert to
+ * @return:
+ *    int value of the str
+ */
 int ato_int(const char *str) {
         int len = strlen(str), i;
         int res = 0;
@@ -24,6 +30,13 @@ int ato_int(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to size_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    size_t value of the str
+ */
 size_t ato_size_t(const char *str) {
         int len = strlen(str), i;
         size_t res = 0;
@@ -35,6 +48,13 @@ size_t ato_size_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to ssize_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    ssize_t value of the str
+ */
 ssize_t ato_ssize_t(const char *str) {
         int len = strlen(str), i;
         ssize_t res = 0;
@@ -46,6 +66,13 @@ ssize_t ato_ssize_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to mode_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    mode_t value of the str
+ */
 mode_t ato_mode_t(const char *str) {
         int len = strlen(str), i;
         mode_t res = 0;
@@ -57,6 +84,13 @@ mode_t ato_mode_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to off_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    off_t value of the str
+ */
 off_t ato_off_t(const char *str) {
         int len = strlen(str), i;
         off_t res = 0;
@@ -68,7 +102,13 @@ off_t ato_off_t(const char *str) {
         return res;
 }
 
-// TODO: check the internal struct of stat is correct
+/*
+ * Convert from char array to stat struct
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    stat struct ptr of the str
+ */
 struct stat *ato_stat(char *str_stat) {
         struct stat* param = (struct stat*)malloc(sizeof(struct stat)); // parameters
 
@@ -260,6 +300,13 @@ struct dirtreenode *ato_dirtreenode(char *str_dirtreenode) {
         return param;
 }
 
+/*
+ * Convert from char array to dev_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    dev_t value of the str
+ */
 dev_t ato_dev_t(const char *str) {
         int len = strlen(str), i;
         dev_t res = 0;
@@ -271,6 +318,13 @@ dev_t ato_dev_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to ino_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    ino_t value of the str
+ */
 ino_t ato_ino_t(const char *str) {
         int len = strlen(str), i;
         ino_t res = 0;
@@ -282,6 +336,13 @@ ino_t ato_ino_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to nlink_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    nlink_t value of the str
+ */
 nlink_t ato_nlink_t(const char *str) {
         int len = strlen(str), i;
         nlink_t res = 0;
@@ -293,6 +354,13 @@ nlink_t ato_nlink_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to uid_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    uid_t value of the str
+ */
 uid_t ato_uid_t(const char *str) {
         int len = strlen(str), i;
         uid_t res = 0;
@@ -304,6 +372,13 @@ uid_t ato_uid_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to gid_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    gid_t value of the str
+ */
 gid_t ato_gid_t(const char *str) {
         int len = strlen(str), i;
         gid_t res = 0;
@@ -315,6 +390,13 @@ gid_t ato_gid_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to blksize_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    blksize_t value of the str
+ */
 blksize_t ato_blksize_t(const char *str) {
         int len = strlen(str), i;
         blksize_t res = 0;
@@ -326,6 +408,13 @@ blksize_t ato_blksize_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to blkcnt_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    blkcnt_t value of the str
+ */
 blkcnt_t ato_blkcnt_t(const char *str) {
         int len = strlen(str), i;
         blkcnt_t res = 0;
@@ -337,6 +426,13 @@ blkcnt_t ato_blkcnt_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from char array to time_t
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    time_t value of the str
+ */
 time_t ato_time_t(const char *str) {
         int len = strlen(str), i;
         time_t res = 0;
@@ -348,6 +444,13 @@ time_t ato_time_t(const char *str) {
         return res;
 }
 
+/*
+ * Convert from int to char array
+ * @param:
+ *    str: int to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *int_to_str(int num) {
 
         int type_size = INTSIZE;
@@ -378,6 +481,13 @@ char *int_to_str(int num) {
         return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from size_t to char array
+ * @param:
+ *    str: size_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *size_t_to_str(size_t num) {
 
         int type_size = ULISIZE;
@@ -397,6 +507,13 @@ char *size_t_to_str(size_t num) {
         return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from ssize_t to char array
+ * @param:
+ *    str: ssize_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *ssize_t_to_str(ssize_t num) {
 
         int type_size = ULISIZE;
@@ -427,6 +544,13 @@ char *ssize_t_to_str(ssize_t num) {
         return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from mode_t to char array
+ * @param:
+ *    str: mode_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *mode_t_to_str(mode_t num) {
 
         int type_size = ULISIZE;
@@ -458,6 +582,13 @@ char *mode_t_to_str(mode_t num) {
         return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from off_t to char array
+ * @param:
+ *    str: off_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *off_t_to_str(off_t num) {
 
         int type_size = ULISIZE;
