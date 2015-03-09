@@ -562,6 +562,14 @@ void _init(void) {
 }
 
 /*
+ * After the lib is unloading, close the sockfd
+ * @return: the same return value of close(sockfd)
+ */
+int _fini(void) {
+    return orig_close(sockfd);
+}
+
+/*
  * Get content from the return value
  * Return value is composed of:
  * length of the content | content
