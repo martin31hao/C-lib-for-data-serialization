@@ -30,16 +30,15 @@
 #include <errno.h>
 #include "mystub.h"
 
-#define MAXMSGLEN 2000 /* Maximum length of receiving message from server */
-#define MAXMSHLEN 2000 /* Maximum length of the marshall message */
 #define INTSIZE 13 /* Size of char representation of int */
 #define ULISIZE 26 /* Size of char representation of unsigned long */
 #define LONGSIZE 26 /* Size of char representation of long */
-#define FD_OFFSET 100000 /* Starting offset of lib-created file descriptors */
+#define MAXWRITELEN 1000100 /* Maximum length of the marshall message */
+#define FD_OFFSET 1000000 /* Starting offset of lib-created file descriptors */
 
-char connection_buf[MAXMSGLEN+1]; /* Connection buffer to receive message from server */
+char connection_buf[MAXWRITELEN+1]; /* Connection buffer to receive message from server */
 struct dirtreenode *ret_dirtreenode; /* ptr to dirtreenode returned from getdirtree */
-char marshallMsg[MAXMSHLEN]; /* Message buffer when doing marshalling */
+char marshallMsg[MAXWRITELEN]; /* Message buffer when doing marshalling */
 int firstConnect = 1; /* Var to denote whether it is the first connection to server */
 
 
@@ -66,7 +65,7 @@ char* marshalling_method(const char* func_name, char *argv, int len) {
     memset(marshallMsg, 0, sizeof(marshallMsg));
     
     /* append function name to marshallMsg */
-    strcat(marshallMsg, func_name);
+    strcpy(marshallMsg, func_name);
 
     strcat(marshallMsg, "|");
 	
@@ -79,6 +78,59 @@ char* marshalling_method(const char* func_name, char *argv, int len) {
     traverse[i] = '\0';
 
     return marshallMsg;
+}
+
+/*
+ * Wrapper of sending message.
+ * I insert 4 byte of int to denote how many bytes behind to transfer
+ * Keep sending until all bytes are sent
+ * @return: number of bytes sent, or -1 if error occurred
+ */
+int send_message(int len, char *msg, int sockfd) {
+    // send message to server
+    char *msgLen = (char *)malloc((4 + len) * sizeof(char));
+    memset(msgLen, 0, (4 + len));
+    memcpy(msgLen, &len, 4);
+    memcpy(msgLen + 4, msg, len);
+    int byte_send = 0;
+    
+    len += 4;
+    
+    while (byte_send < len) {
+        int sd = send(sockfd, msgLen + byte_send, len - byte_send, 0);
+        byte_send += sd;
+    }
+    free(msgLen);
+    
+    return byte_send;
+}
+
+/*
+ * Wrapper of receiving message.
+ * Receive the first 4 byte of int to denote how many bytes behind to be received
+ * Keep receiving until all bytes have been received
+ * @return: number of bytes received, or -1 if error occurred
+ */
+int receive_message(int sockfd) {
+    int recv_byte = 0;
+    memset(connection_buf, 0, sizeof(connection_buf));
+    
+    int len;
+    int first_time = 1;
+    
+    while (1) {
+        rv = recv(sockfd, connection_buf + recv_byte, MAXWRITELEN, 0);
+        if (rv < 0) err(1, 0);
+        if (rv == 0)	return 0;
+        recv_byte += rv;
+        if (first_time == 1) {
+            first_time = 0;
+            memcpy(&len, connection_buf, 4);
+        }
+        if (len + 4 <= recv_byte)	break;
+    }
+    connection_buf[recv_byte] = 0;
+    return recv_byte;
 }
 
 int (*orig_close)(int fd); /* Original close system call function ptr */
@@ -99,7 +151,7 @@ char *connect_to_server(char* msg, int len) {
 		
         // Get environment variable indicating the ip address of the server
         serverip = getenv("server15440");
-        if (serverip); printf("Got environment variable server15440: %s\n", serverip);
+        if (serverip) printf("Got environment variable server15440: %s\n", serverip);
         else {
             serverip = "127.0.0.1";
         }
@@ -118,6 +170,7 @@ char *connect_to_server(char* msg, int len) {
         if (sockfd < 0) {
             err(1, 0);                        // in case of error
             firstConnect = 1;
+            exit(255);
         }
 
         // setup address structure to point to server
@@ -130,19 +183,21 @@ char *connect_to_server(char* msg, int len) {
         if (rv < 0) {
             err(1, 0);
             firstConnect = 1;
+            exit(255);
         }
     }
 
     // send message to server
-    send(sockfd, msg, len + 1, 0);
+    send_message(len, msg, sockfd);
+    
+    int rcv = receive_message(sockfd);
+    if (rcv == 0) {
+        orig_close(sockfd);
+    } else if (rcv < 0) {
+        err(1, 0);
+    }
 
-    memset(connection_buf, 0, sizeof(connection_buf));
-
-    rv = recv(sockfd, connection_buf, MAXMSGLEN, 0);
-    if (rv < 0) err(1, 0);
-    connection_buf[rv] = 0;
-
-    return connection_buf;
+    return connection_buf + 4;
 }
 
 // The following line declares a function pointer with the same prototype as the open function.  
@@ -327,7 +382,7 @@ ssize_t write(int fd, void *buf, size_t count) {
     char *traverse = argv;
     while (*traverse != '\0') traverse++;
 	
-    memcpy(traverse, buf, count);
+    memcpy(traverse, (char *)buf, count);
 	
     char *msg = marshalling_method("write",  argv, tmpLen + count);
     char *ret_val = connect_to_server(msg, tmpLen + count + 6);
@@ -438,7 +493,7 @@ int unlink(const char *pathname) {
 
     strcpy(argv, pathname);
 	
-    char* msg = marshalling_method("unlink", argv, strlen(argv));
+    char *msg = marshalling_method("unlink", argv, strlen(argv));
     char *ret_val = connect_to_server(msg, strlen(msg));
     ret_val = get_ret_content(ret_val);
     
@@ -488,18 +543,16 @@ ssize_t getdirentries(int fd, char *buf, size_t nbytes, off_t *basep) {
     *number = '\0';
     number++;
 
-    ssize_t ret_num = ato_ssize_t(ret_val);
     if (*number == '-') {
         errno = -atoi(number);
         fprintf(stderr, "errno: %d\n", errno);
         return -1;
     }
-	
+    
+    ssize_t ret_num = ato_ssize_t(ret_val);
     int i;
     for (i = 0; i < ret_num; i++) {
-        if (number[i] != '|') // TODO: Will '|' cause bugs
-            buf[i] = number[i];
-        else	buf[i] = '\0';
+        buf[i] = number[i];
     }
 
     free(argv);
@@ -519,7 +572,7 @@ struct dirtreenode* getdirtree(const char *path) {
     char *argv = (char *)malloc(1000 * sizeof(char));
     strcpy(argv, path);
 	
-    char* msg = marshalling_method("getdirtree", argv, strlen(argv));
+    char *msg = marshalling_method("getdirtree", argv, strlen(argv));
     char *ret_val = connect_to_server(msg, strlen(msg));
     ret_val = get_ret_content(ret_val);
     if (*ret_val == '-') {
