@@ -1,3 +1,16 @@
+/*
+ * @author: Xinkai Wang
+ * @contact: xinkaiw@andrew.cmu.edu
+ *
+ * mystub.c
+ * Implementaton of functions defined in mystub.h
+ *
+ * Define utility functions for mylib, the main capabilities are:
+ *     1. Convert between integer type and char array
+ *     2. Convert between stat struct and char array
+ *     3. Convert between dirtreenode (a library data structure) struct and char array
+ */
+
 #include "mystub.h"
 
 #define MAXMSGLEN 2000 /* Maximum length of receiving message from server */
@@ -5,12 +18,6 @@
 #define INTSIZE 13 /* Size of char representation of int */
 #define ULISIZE 26 /* Size of char representation of unsigned long */
 #define LONGSIZE 26 /* Size of char representation of long */
-
-void check_param_type(const char *subtoken, const char *type, const char* func_name) {
-        if (strcmp(subtoken, type) != 0) {
-                fprintf(stderr, "%s: parameter type should be %s\n", func_name, type);
-        }
-}
 
 /*
  * Convert from char array to int
@@ -20,14 +27,14 @@ void check_param_type(const char *subtoken, const char *type, const char* func_n
  *    int value of the str
  */
 int ato_int(const char *str) {
-        int len = strlen(str), i;
-        int res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    int res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -38,14 +45,14 @@ int ato_int(const char *str) {
  *    size_t value of the str
  */
 size_t ato_size_t(const char *str) {
-        int len = strlen(str), i;
-        size_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    size_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -56,14 +63,14 @@ size_t ato_size_t(const char *str) {
  *    ssize_t value of the str
  */
 ssize_t ato_ssize_t(const char *str) {
-        int len = strlen(str), i;
-        ssize_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    ssize_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -74,14 +81,14 @@ ssize_t ato_ssize_t(const char *str) {
  *    mode_t value of the str
  */
 mode_t ato_mode_t(const char *str) {
-        int len = strlen(str), i;
-        mode_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    mode_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -92,212 +99,219 @@ mode_t ato_mode_t(const char *str) {
  *    off_t value of the str
  */
 off_t ato_off_t(const char *str) {
-        int len = strlen(str), i;
-        off_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    off_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
  * Convert from char array to stat struct
+ * each member is separated by a '\t' character
  * @param:
  *    str: char ptr to convert to
  * @return:
  *    stat struct ptr of the str
  */
 struct stat *ato_stat(char *str_stat) {
-        struct stat* param = (struct stat*)malloc(sizeof(struct stat)); // parameters
+    struct stat* param = (struct stat*)malloc(sizeof(struct stat)); // parameters
 
-	char *traverse = str_stat;
-	char *pivot = traverse;
-	int len = 0;
+    char *traverse = str_stat;
+    char *pivot = traverse;
+    int len = 0;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_dev = ato_dev_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_dev = ato_dev_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_ino = ato_ino_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_ino = ato_ino_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_mode = ato_mode_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_mode = ato_mode_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_nlink = ato_nlink_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_nlink = ato_nlink_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_uid = ato_uid_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_uid = ato_uid_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_gid = ato_gid_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_gid = ato_gid_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_rdev = ato_dev_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_rdev = ato_dev_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_size = ato_off_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_size = ato_off_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_blksize = ato_blksize_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_blksize = ato_blksize_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_blocks = ato_blkcnt_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_blocks = ato_blkcnt_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_atime = ato_time_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_atime = ato_time_t(pivot);
+    pivot = traverse;
 
-	while (*traverse != '\t') {
-		traverse++;
-		len++;
-	}
-	*traverse = '\0';
-	traverse++;
-	param->st_mtime = ato_time_t(pivot);
-	pivot = traverse;
+    while (*traverse != '\t') {
+        traverse++;
+        len++;
+    }
+    *traverse = '\0';
+    traverse++;
+    param->st_mtime = ato_time_t(pivot);
+    pivot = traverse;
 
-	param->st_ctime = ato_time_t(pivot);
+    param->st_ctime = ato_time_t(pivot);
 
-        return param;
+    return param;
 }
 
+/*
+ * Convert from char array to dirtreenode struct
+ * @param:
+ *    str: char ptr to convert to
+ * @return:
+ *    dirtreenode struct value of the str
+ */
 struct dirtreenode *ato_dirtreenode(char *str_dirtreenode) {
-        int i = 0;
-        struct dirtreenode *param; // parameters
-	char *traverse = str_dirtreenode;
-	int len = 0;
-	char *num_subdirs, *pivot = traverse;
+    int i = 0;
+    struct dirtreenode *param; // parameters
+    char *traverse = str_dirtreenode;
+    int len = 0;
+    char *num_subdirs, *pivot = traverse;
 
-	param = (struct dirtreenode *)malloc(sizeof(struct dirtreenode));
+    param = (struct dirtreenode *)malloc(sizeof(struct dirtreenode));
 
-	while (i < 2) {
-		if (*traverse == '\t') {
-			i++;
-			if (i == 1) {
-				param->name = (char *)malloc((len + 1) * sizeof(char));
-				memcpy(param->name, pivot, len);
-				param->name[len] = '\0';
-			}
-			else {
-				num_subdirs = (char *)malloc((len + 1) * sizeof(char));
-				memcpy(num_subdirs, pivot, len);
-				num_subdirs[len] = '\0';
-			}
-			len = 0;
-			pivot = traverse + 1;
-		}
-		else {
-			len++;
-		}
-		traverse++;
-	}
-	traverse++;
+    while (i < 2) {
+        if (*traverse == '\t') {
+            i++;
+            if (i == 1) {
+                param->name = (char *)malloc((len + 1) * sizeof(char));
+                memcpy(param->name, pivot, len);
+                param->name[len] = '\0';
+            }
+            else {
+                num_subdirs = (char *)malloc((len + 1) * sizeof(char));
+                memcpy(num_subdirs, pivot, len);
+                num_subdirs[len] = '\0';
+            }
+            len = 0;
+            pivot = traverse + 1;
+        }
+        else {
+            len++;
+        }
+        traverse++;
+    }
+    traverse++;
 
-	param->num_subdirs = atoi(num_subdirs);
-	free(num_subdirs);
-	if (param->num_subdirs == 0)
-		param->subdirs = NULL;
-	else 
-		param->subdirs = (struct dirtreenode **)malloc(param->num_subdirs * sizeof(struct dirtreenode *));
+    param->num_subdirs = atoi(num_subdirs);
+    free(num_subdirs);
+    if (param->num_subdirs == 0)
+        param->subdirs = NULL;
+    else
+        param->subdirs = (struct dirtreenode **)malloc(param->num_subdirs * sizeof(struct dirtreenode *));
 
-	// Deal with sub directories
-	int leftBrace = 1, rightBrace = 0;
-	len = 0;
-	pivot = traverse;
-	char *subDir;
-	int idx = 0;
-	while(leftBrace - rightBrace > 0) {
-		len++;
-		if (*traverse == '(') {
-			leftBrace++;
-		}
-		else if (*traverse == ')') {
-			rightBrace++;
-			if (rightBrace != 0 && leftBrace - rightBrace == 1) {
-				subDir = (char *)malloc((len + 1) * sizeof(char));
-				memcpy(subDir, pivot, len);
-				subDir[len] = '\0';
-				len = 0;
-				struct dirtreenode *node = ato_dirtreenode(subDir);
-				param->subdirs[idx++] = node;
-				free(subDir);
-				pivot = traverse + 1;
-			}
-		}
-		traverse++;
-	}
+    /* Deal with sub directories */
+    /* Recursively convert subdir into char arrays with the same function */
+    int leftBrace = 1, rightBrace = 0;
+    len = 0;
+    pivot = traverse;
+    char *subDir;
+    int idx = 0;
+    while(leftBrace - rightBrace > 0) {
+        len++;
+        if (*traverse == '(') {
+            leftBrace++;
+        }
+        else if (*traverse == ')') {
+            rightBrace++;
+            if (rightBrace != 0 && leftBrace - rightBrace == 1) {
+                subDir = (char *)malloc((len + 1) * sizeof(char));
+                memcpy(subDir, pivot, len);
+                subDir[len] = '\0';
+                len = 0;
+                struct dirtreenode *node = ato_dirtreenode(subDir);
+                param->subdirs[idx++] = node;
+                free(subDir);
+                pivot = traverse + 1;
+            }
+        }
+        traverse++;
+    }
 
-        // TODO: If errno is set, what to return?
-
-        return param;
+    return param;
 }
 
 /*
@@ -308,14 +322,14 @@ struct dirtreenode *ato_dirtreenode(char *str_dirtreenode) {
  *    dev_t value of the str
  */
 dev_t ato_dev_t(const char *str) {
-        int len = strlen(str), i;
-        dev_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    dev_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -326,14 +340,14 @@ dev_t ato_dev_t(const char *str) {
  *    ino_t value of the str
  */
 ino_t ato_ino_t(const char *str) {
-        int len = strlen(str), i;
-        ino_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    ino_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -344,14 +358,14 @@ ino_t ato_ino_t(const char *str) {
  *    nlink_t value of the str
  */
 nlink_t ato_nlink_t(const char *str) {
-        int len = strlen(str), i;
-        nlink_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    nlink_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -362,14 +376,14 @@ nlink_t ato_nlink_t(const char *str) {
  *    uid_t value of the str
  */
 uid_t ato_uid_t(const char *str) {
-        int len = strlen(str), i;
-        uid_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    uid_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -380,14 +394,14 @@ uid_t ato_uid_t(const char *str) {
  *    gid_t value of the str
  */
 gid_t ato_gid_t(const char *str) {
-        int len = strlen(str), i;
-        gid_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    gid_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -398,14 +412,14 @@ gid_t ato_gid_t(const char *str) {
  *    blksize_t value of the str
  */
 blksize_t ato_blksize_t(const char *str) {
-        int len = strlen(str), i;
-        blksize_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    blksize_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -416,14 +430,14 @@ blksize_t ato_blksize_t(const char *str) {
  *    blkcnt_t value of the str
  */
 blkcnt_t ato_blkcnt_t(const char *str) {
-        int len = strlen(str), i;
-        blkcnt_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    blkcnt_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -434,14 +448,14 @@ blkcnt_t ato_blkcnt_t(const char *str) {
  *    time_t value of the str
  */
 time_t ato_time_t(const char *str) {
-        int len = strlen(str), i;
-        time_t res = 0;
-	int st = 0;
-	if (*str == '-')	st = 1;
-        for (i = st; i < len && str[i] != '|'; i++)
-                res = res * 10 + str[i] - '0';
-	if (st == 1)	res = -res;
-        return res;
+    int len = strlen(str), i;
+    time_t res = 0;
+    int st = 0;
+    if (*str == '-')	st = 1;
+    for (i = st; i < len && str[i] != '|'; i++)
+        res = res * 10 + str[i] - '0';
+    if (st == 1)	res = -res;
+    return res;
 }
 
 /*
@@ -453,32 +467,32 @@ time_t ato_time_t(const char *str) {
  */
 char *int_to_str(int num) {
 
-        int type_size = INTSIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = INTSIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
 /*
@@ -490,21 +504,21 @@ char *int_to_str(int num) {
  */
 char *size_t_to_str(size_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
 
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
 /*
@@ -516,32 +530,32 @@ char *size_t_to_str(size_t num) {
  */
 char *ssize_t_to_str(ssize_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
 /*
@@ -553,33 +567,33 @@ char *ssize_t_to_str(ssize_t num) {
  */
 char *mode_t_to_str(mode_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
 
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
 /*
@@ -591,337 +605,415 @@ char *mode_t_to_str(mode_t num) {
  */
 char *off_t_to_str(off_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
 char *char_to_str(char* str) {
-        return str;
+    return str;
 }
 
 char *voidptr_to_str(void *ptr) {
-        return (char *)ptr;
+    return (char *)ptr;
 }
 
-// TODO: need to ensure the sequence of struct is correct
+/*
+ * Convert from stat struct to char array
+ * @param:
+ *    str: stat struct to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *statptr_to_str(struct stat *buf) {
-        char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
-        //strcpy(str, "st_dev@");
-        strcpy(str, dev_t_to_str(buf->st_dev));
-	strcat(str, "\t");
-        //strcat(str, "\tst_ino@");
-        strcat(str, ino_t_to_str(buf->st_ino));
-	strcat(str, "\t");
-        //strcat(str, "\tst_mode@");
-        strcat(str, mode_t_to_str(buf->st_mode));
-	strcat(str, "\t");
-        //strcat(str, "\tst_nlink@");
-        strcat(str, nlink_t_to_str(buf->st_nlink));
-	strcat(str, "\t");
-        //strcat(str, "\tst_uid@");
-        strcat(str, uid_t_to_str(buf->st_uid));
-	strcat(str, "\t");
-        //strcat(str, "\tst_gid@");
-        strcat(str, gid_t_to_str(buf->st_gid));
-	strcat(str, "\t");
-        //strcat(str, "\tst_rdev@");
-        strcat(str, dev_t_to_str(buf->st_rdev));
-	strcat(str, "\t");
-        //strcat(str, "\tst_size@");
-        strcat(str, off_t_to_str(buf->st_size));
-	strcat(str, "\t");
-        //strcat(str, "\tst_blksize@");
-        strcat(str, blksize_t_to_str(buf->st_blksize));
-	strcat(str, "\t");
-        //strcat(str, "\tst_blocks@");
-        strcat(str, blkcnt_t_to_str(buf->st_blocks));
-	strcat(str, "\t");
-        //strcat(str, "\tst_atime@");
-        strcat(str, time_t_to_str(buf->st_atime));
-	strcat(str, "\t");
-        //strcat(str, "\tst_mtime@");
-        strcat(str, time_t_to_str(buf->st_mtime));
-	strcat(str, "\t");
-        //strcat(str, "\tst_ctime@");
-        strcat(str, time_t_to_str(buf->st_ctime));
-        return str;
+    char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
+    
+    /*
+     * each member in stat struct is separated by a '\t' character
+     */
+    
+    strcpy(str, dev_t_to_str(buf->st_dev));
+    strcat(str, "\t");
+    
+    strcat(str, ino_t_to_str(buf->st_ino));
+    strcat(str, "\t");
+
+    strcat(str, mode_t_to_str(buf->st_mode));
+    strcat(str, "\t");
+
+    strcat(str, nlink_t_to_str(buf->st_nlink));
+    strcat(str, "\t");
+
+    strcat(str, uid_t_to_str(buf->st_uid));
+    strcat(str, "\t");
+
+    strcat(str, gid_t_to_str(buf->st_gid));
+    strcat(str, "\t");
+
+    strcat(str, dev_t_to_str(buf->st_rdev));
+    strcat(str, "\t");
+
+    strcat(str, off_t_to_str(buf->st_size));
+    strcat(str, "\t");
+
+    strcat(str, blksize_t_to_str(buf->st_blksize));
+    strcat(str, "\t");
+
+    strcat(str, blkcnt_t_to_str(buf->st_blocks));
+    strcat(str, "\t");
+
+    strcat(str, time_t_to_str(buf->st_atime));
+    strcat(str, "\t");
+
+    strcat(str, time_t_to_str(buf->st_mtime));
+    strcat(str, "\t");
+
+    strcat(str, time_t_to_str(buf->st_ctime));
+    return str;
 }
 
+/*
+ * Convert from dirtreenode to char array
+ * @param:
+ *    str: dirtreenode to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *dirtreenode_to_str(struct dirtreenode* node) {
-        int i;
-        char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
-        strcpy(str, node->name);
-        strcat(str, "\t");
-        strcat(str, int_to_str(node->num_subdirs));
-        strcat(str, "\t(");
-        for (i = 0; i < node->num_subdirs; i++) {
-                strcat(str, dirtreenode_to_str(node->subdirs[i]));
-        }
-        strcat(str, ")");
-        return str;
+    int i;
+    char *str = (char *)malloc(MAXMSHLEN * sizeof(char));
+    strcpy(str, node->name);
+    strcat(str, "\t");
+    strcat(str, int_to_str(node->num_subdirs));
+    strcat(str, "\t(");
+    for (i = 0; i < node->num_subdirs; i++) {
+        strcat(str, dirtreenode_to_str(node->subdirs[i]));
+    }
+    strcat(str, ")");
+    return str;
 }
 
+/*
+ * Convert from dev_t to char array
+ * @param:
+ *    str: dev_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *dev_t_to_str(dev_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from ino_t to char array
+ * @param:
+ *    str: ino_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *ino_t_to_str(ino_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from nlink_t to char array
+ * @param:
+ *    str: nlink_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *nlink_t_to_str(nlink_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
-
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
+    
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from uid_t to char array
+ * @param:
+ *    str: uid_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *uid_t_to_str(uid_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from gid_t to char array
+ * @param:
+ *    str: gid_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *gid_t_to_str(gid_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from blksize_t to char array
+ * @param:
+ *    str: blksize_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *blksize_t_to_str(blksize_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from blkcnt_t to char array
+ * @param:
+ *    str: blkcnt_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *blkcnt_t_to_str(blkcnt_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+/*
+ * Convert from time_t to char array
+ * @param:
+ *    str: time_t to convert to
+ * @return:
+ *    char arry of the conversion
+ */
 char *time_t_to_str(time_t num) {
 
-        int type_size = ULISIZE;
-        char *str = (char *)malloc(type_size * sizeof(char));
-        str[type_size-1] = '\0';
-        int cnt = 0;
-        int negative = 0;
+    int type_size = ULISIZE;
+    char *str = (char *)malloc(type_size * sizeof(char));
+    str[type_size-1] = '\0';
+    int cnt = 0;
+    int negative = 0;
 
-        // if num is negative, first make it positive
-        if (num < 0) {
-                negative = 1;
-                num = -num;
-        }
-        if (num == 0) {
-                str[type_size-2] = '0';
-                return &str[type_size-2];
-        }
-        while (num) {
-                str[type_size-2-cnt] = num % 10 + '0';
-                num /= 10;
-                cnt++;
-        }
-        // add negative number sign byte
-        if (negative == 1) {
-                str[type_size-2-cnt] = '-';
-                cnt++;
-        }
-        return &str[type_size-1-cnt];
+    // if num is negative, first make it positive
+    if (num < 0) {
+        negative = 1;
+        num = -num;
+    }
+    if (num == 0) {
+        str[type_size-2] = '0';
+        return &str[type_size-2];
+    }
+    while (num) {
+        str[type_size-2-cnt] = num % 10 + '0';
+        num /= 10;
+        cnt++;
+    }
+    // add negative number sign byte
+    if (negative == 1) {
+        str[type_size-2-cnt] = '-';
+        cnt++;
+    }
+    return &str[type_size-1-cnt];
 }
 
+void check_param_type(const char *subtoken, const char *type, const char* func_name) {
+    if (strcmp(subtoken, type) != 0) {
+        fprintf(stderr, "%s: parameter type should be %s\n", func_name, type);
+    }
+}

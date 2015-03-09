@@ -4,8 +4,9 @@
  *
  * mystub.h
  * Define utility functions for mylib, the main capabilities are:
- *     1. Convert integer type to char array
- *     2. Convert char array into integer type
+ *     1. Convert between integer type and char array
+ *     2. Convert between stat struct and char array
+ *     3. Convert between dirtreenode (a library data structure) struct and char array
  */
 
 #define _GNU_SOURCE
