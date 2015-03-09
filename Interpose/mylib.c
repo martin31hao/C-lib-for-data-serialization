@@ -61,24 +61,24 @@ char *get_ret_content(char *ret_val);
  * 4. Don't forget to append '\0' to terminate char array
  */
 char* marshalling_method(const char* func_name, char *argv, int len) {
-	int i;
+    int i;
     
-	memset(marshallMsg, 0, sizeof(marshallMsg));
+    memset(marshallMsg, 0, sizeof(marshallMsg));
     
-	/* append function name to marshallMsg */
-	strcat(marshallMsg, func_name);
+    /* append function name to marshallMsg */
+    strcat(marshallMsg, func_name);
 
-	strcat(marshallMsg, "|");
+    strcat(marshallMsg, "|");
 	
-	char *traverse = marshallMsg;
-	while (*traverse != '\0')	traverse++;
+    char *traverse = marshallMsg;
+    while (*traverse != '\0')	traverse++;
 
-	for (i = 0; i < len; i++) {
-		traverse[i] = argv[i];
-	}
-	traverse[i] = '\0';
+    for (i = 0; i < len; i++) {
+        traverse[i] = argv[i];
+    }
+    traverse[i] = '\0';
 
-	return marshallMsg;
+    return marshallMsg;
 }
 
 int (*orig_close)(int fd); /* Original close system call function ptr */
@@ -94,7 +94,7 @@ int (*orig_close)(int fd); /* Original close system call function ptr */
  */
 char *connect_to_server(char* msg, int len) {
 
-	if (firstConnect == 1) {
+    if (firstConnect == 1) {
         firstConnect = 0;
 		
         // Get environment variable indicating the ip address of the server
@@ -133,16 +133,16 @@ char *connect_to_server(char* msg, int len) {
         }
     }
 
-	// send message to server
-	send(sockfd, msg, len + 1, 0);
+    // send message to server
+    send(sockfd, msg, len + 1, 0);
 
-	memset(connection_buf, 0, sizeof(connection_buf));
+    memset(connection_buf, 0, sizeof(connection_buf));
 
-	rv = recv(sockfd, connection_buf, MAXMSGLEN, 0);
-	if (rv < 0) err(1, 0);
-	connection_buf[rv] = 0;
+    rv = recv(sockfd, connection_buf, MAXMSGLEN, 0);
+    if (rv < 0) err(1, 0);
+    connection_buf[rv] = 0;
 
-	return connection_buf;
+    return connection_buf;
 }
 
 // The following line declares a function pointer with the same prototype as the open function.  
