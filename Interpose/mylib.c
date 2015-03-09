@@ -1,8 +1,20 @@
+/*
+ * @author: Xinkai Wang
+ * @contact: xinkaiw@andrew.cmu.edu
+ *
+ * mylib.c
+ * The main functionality of marshalling and unmarshalling
+ * data on different system calls.
+ * Supported system calls:
+ * open, close, read, write, lseek, xstat, unlink, getdirentries
+ * As well as two self-define functions:
+ * getdirtree, freedirtree
+ */
+
 #define _GNU_SOURCE
 
 #include <dlfcn.h>
 #include <stdio.h>
- 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -16,34 +28,49 @@
 #include <errno.h>
 #include "mystub.h"
 
-#define MAXMSGLEN 2000
-#define MAXMSHLEN 2000
-#define INTSIZE 13
-#define ULISIZE 26
-#define LONGSIZE 26
-#define MAXFUNCSIZE 20
-#define MAXWRITELEN 1000020
-#define FD_OFFSET 100000
+#define MAXMSGLEN 2000 /* Maximum length of receiving message from server */
+#define MAXMSHLEN 2000 /* Maximum length of the marshall message */
+#define INTSIZE 13 /* Size of char representation of int */
+#define ULISIZE 26 /* Size of char representation of unsigned long */
+#define LONGSIZE 26 /* Size of char representation of long */
+#define FD_OFFSET 100000 /* Starting offset of lib-created file descriptors */
 
-char connection_buf[MAXMSGLEN+1];
-struct dirtreenode *ret_dirtreenode;
-char marshallMsg[MAXMSHLEN];
-int firstConnect = 1;
+char connection_buf[MAXMSGLEN+1]; /* Connection buffer to receive message from server */
+struct dirtreenode *ret_dirtreenode; /* ptr to dirtreenode returned from getdirtree */
+char marshallMsg[MAXMSHLEN]; /* Message buffer when doing marshalling */
+int firstConnect = 1; /* Var to denote whether it is the first connection to server */
+
+
+char *serverip; /* server ip address */
+char *serverport; /* server port */
+unsigned short port; /* port number in integer */
+int sockfd; /* socket file descriptor */
+int rv; /* return value of receiving messages */
+struct sockaddr_in srv;
 
 char *get_ret_content(char *ret_val);
 
-// Client-side marshall the system calls
+/*
+ * Client-side marshalling of system calls
+ * The main idea is to:
+ * 1. Append method name at front
+ * 2. Append the method name with a '|' character
+ * 3. Append argv (created by caller)
+ * 4. Don't forget to append '\0' to terminate char array
+ */
 char* marshalling_method(const char* func_name, char *argv, int len) {
-
+	int i;
+    
 	memset(marshallMsg, 0, sizeof(marshallMsg));
-	// append function name to marshallMsg
+    
+	/* append function name to marshallMsg */
 	strcat(marshallMsg, func_name);
 
 	strcat(marshallMsg, "|");
 	
 	char *traverse = marshallMsg;
 	while (*traverse != '\0')	traverse++;
-	int i;
+
 	for (i = 0; i < len; i++) {
 		traverse[i] = argv[i];
 	}
@@ -52,28 +79,32 @@ char* marshalling_method(const char* func_name, char *argv, int len) {
 	return marshallMsg;
 }
 
-char *serverip;
-char *serverport;
-unsigned short port;
-int sockfd, rv;
-struct sockaddr_in srv;
+int (*orig_close)(int fd); /* Original close system call function ptr */
 
-int (*orig_close)(int fd);
+/*
+ * Set up socket connection and send marshalling message to server
+ * as well as receive marshalling message from the server
+ * @param:
+ *    msg: message to send to server
+ *    len: length of the message.
+ *         This is necessary because there may be '\0' in the message, such as read and write
+ * @return: the marshalling message returned by server
+ */
 char *connect_to_server(char* msg, int len) {
 
 	if (firstConnect == 1) {
-		firstConnect = 0;
+        firstConnect = 0;
 		
 		// Get environment variable indicating the ip address of the server
         serverip = getenv("server15440");
-        if (serverip);// printf("Got environment variable server15440: %s\n", serverip);
+        if (serverip); printf("Got environment variable server15440: %s\n", serverip);
         else {
             serverip = "127.0.0.1";
         }
 
 		// Get environment variable indicating the port of the server
         serverport = getenv("serverport15440");
-        if (serverport); fprintf(stderr, "Got environment variable serverport15440: %s\n", serverport);
+        if (serverport) fprintf(stderr, "Got environment variable serverport15440: %s\n", serverport);
         else {
             fprintf(stderr, "Environment variable serverport15440 not found.  Using 15440\n");
             serverport = "15440";
@@ -82,7 +113,7 @@ char *connect_to_server(char* msg, int len) {
 
         // Create socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);       // TCP/IP socket
-        if (sockfd<0) {
+        if (sockfd < 0) {
 			err(1, 0);                        // in case of error
 			firstConnect = 1;
 		}
@@ -94,8 +125,8 @@ char *connect_to_server(char* msg, int len) {
         srv.sin_port = htons(port);                     // server port
         // actually connect to the server
         rv = connect(sockfd, (struct sockaddr*)&srv, sizeof(struct sockaddr));
-        if (rv<0) {
-            err(1,0);
+        if (rv < 0) {
+            err(1, 0);
 			firstConnect = 1;
 		}
 	}
@@ -109,7 +140,6 @@ char *connect_to_server(char* msg, int len) {
 	if (rv < 0) err(1, 0);
 	connection_buf[rv] = 0;
 
-	//orig_close(sockfd);
 	return connection_buf;
 }
 
