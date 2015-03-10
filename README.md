@@ -1,12 +1,12 @@
 ## Synopsis
 
-Transparent Remote File Operation
 The project is designed to provide capabilities to achieve RPC data serialization and deserialization on typical UNIX system calls, such as open, close, read, write, lseek, unlink, stat, getdirentries, as well as two self-defined functions, which are getdirtree and freedirtree.
+
+An RPC protocol is designed to marshall and unmarshall data structures to achieve data serialization and deserialization so that RPC is transparent to client.
 
 ## Code Example
 
-The tcp-sample directory has a sample code for a simple
-server and client.
+The tcp-sample directory has a sample code for a simple server and client.
 
 The interpose directory has code for creating a interposition library. and networking code to log the operations to the remote server. 
 
@@ -26,8 +26,7 @@ or (if using CSH, TCSH, ...):
 
 	env LD_PRELOAD=./interpose/mylib.so ./tools/440read README
 
-You should see a message indicating the open function
-in the interpositon library was called.  
+You should see a message indicating the open function in the interpositon library was called.  
 
 Note that the 440tree tool uses the getdirtree function implemented in libdirtree.so in the lib directory.  Please add the absolute path of this directory to LD_LIBRARY_PATH
 to make sure that the system can find the library, e.g. on BASH:
