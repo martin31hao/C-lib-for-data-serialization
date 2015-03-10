@@ -8,7 +8,9 @@ An RPC protocol is designed to marshall and unmarshall data structures to achiev
 
 The tcp-sample directory has a sample code for a simple server and client.
 
-The interpose directory has code for creating a interposition library. and networking code to log the operations to the remote server. 
+The interpose directory has code for creating a interposition library.
+
+Network is done by sockets programming to log the operations to the remote server. Each time the server gets a socket connection from client, a new process will be forked.
 
 ## Installation
 
